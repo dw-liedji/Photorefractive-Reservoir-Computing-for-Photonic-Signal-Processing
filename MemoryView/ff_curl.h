@@ -13,6 +13,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
+#include <vector>
 
 #include <ff/parallel_for.hpp>
 
@@ -58,10 +59,10 @@ namespace ff_curl_parallel
                     const size_m _start = (idx == 0) ? 0 : ((idx * c) + offset);
                     const size_m _stop  = last ? CU : ((idx+1)*c + 1 + offset);
                     
-                    H->curl_E( E->slice( _start, _stop, 0, M, 0, R, 0, CO ),
-                               H->slice( _start, _stop, 0, M, 0, R, 0, CO ),
-                               D->slice( _start, _stop, 0, M, 0, R, 0, CO ),
-                               curl->slice( _start, _stop, 0, M, 0, 1, 0, CO ),
+                    H->curl_E( E->slice( [_start, _stop, 0, M, 0, R, 0, CO] ),
+                               H->slice( [_start, _stop, 0, M, 0, R, 0, CO] ),
+                               D->slice( [_start, _stop, 0, M, 0, R, 0, CO] ),
+                               curl->slice( [_start, _stop, 0, M, 0, 1, 0, CO] ),
                                sc, last );
                 });
             }
@@ -79,10 +80,10 @@ namespace ff_curl_parallel
                     const size_m _start = (first) ? 0 : ((idx * c) - 1 + offset);
                     const size_m _stop  = (idx == _Np-1) ? CU : ((idx+1)*c + offset);
                     
-                    H->curl_H( H->slice( _start, _stop, 0, M, 0, R, 0, CO ),
-                               E->slice( _start, _stop, 0, M, 0, R, 0, CO ),
-                               D->slice( _start, _stop, 0, M, 0, R, 0, CO ),
-                               curl->slice( _start, _stop, 0, M, 0, 1, 0, CO ),
+                    H->curl_H( H->slice( [_start, _stop, 0, M, 0, R, 0, CO] ),
+                               E->slice( [_start, _stop, 0, M, 0, R, 0, CO] ),
+                               D->slice( [_start, _stop, 0, M, 0, R, 0, CO] ),
+                               curl->slice( [_start, _stop, 0, M, 0, 1, 0, CO] ),
                                sc, first );
                 });
             }
