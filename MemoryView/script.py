@@ -8,20 +8,23 @@ from parallel_curl import *
 ##########
 ## INIT ##
 ##########
-CU = 500 # #Cubes
-M =  500 # #Matrices.
-R =  150 # #Rows.
+CU = 300 # #Cubes
+M =  300 # #Matrices.
+R =  300 # #Rows.
 CO = 3   # #Columns.
-Q =  1  # Number of timesteps (3000??).
+Q =  20  # Number of timesteps (3000??).
 # Threads.
 Np = multiprocessing.cpu_count()
-Np = 4
 
 # Courant Number.
 sc = 0.7
 
 Type = np.float32
 
+
+#############
+## METHODS ##
+#############
 
 def new_fields():
     np.random.seed(6)
@@ -33,7 +36,7 @@ def new_fields():
 if __name__ == '__main__':
     E, H, D = new_fields()
     
-    #init( E, H, D )
+    init( Np )
     
     print "START SEQUENTIAL.."
     t = time()
