@@ -53,12 +53,15 @@ ctypedef float T
 # FastFlow object.
 cdef FF_cube[T]* ff = NULL
 
-def init( Np ): # Init the objects used in the computation.
+
+# Init the objects used in the computation.
+def init( int Np ):
     global ff
     ff = new FF_cube[T]( Np )
 
 
-def seq_curl_E(E): # Transforms an E field into an H field by performing a curl
+# Transforms an E field into an H field by performing a curl
+def seq_curl_E(E):
     ret = np.zeros(E.shape)
     
     # x - component
@@ -86,7 +89,8 @@ def pySEQ_curl_E( E, H, D, sc ):
     E += sc * D * seq_curl_E( H )
 
 
-def curl_E( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, ndim=4] D, np.ndarray[T, ndim=3] curl, sc, Np ):
+# Transforms an H field into an E field by performing a curl
+def curl_E( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, ndim=4] D, np.ndarray[T, ndim=3] curl, T sc, int Np ):
     
     # Get the size of the input data structures.
     cdef size_m CU = H.shape[0], M = H.shape[1], R = H.shape[2], CO = H.shape[3]
@@ -103,7 +107,7 @@ def curl_E( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, ndim
     cdef int c = CU/Np
     cdef int _offset = CU % Np
     cdef int _Np = Np
-    cdef int _sc = sc
+    cdef T   _sc = sc
     
     with nogil:
         # Parallel cycle with OpenMP.
@@ -123,12 +127,12 @@ def curl_E( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, ndim
         free( _curl )
 
 
-def curl_H( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, ndim=4] D, np.ndarray[T, ndim=3] curl, sc, Np ):
+def curl_H( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, ndim=4] D, np.ndarray[T, ndim=3] curl, T sc, int Np ):
     
     # Get the size of the input data structures.
     cdef int CU = H.shape[0], M = H.shape[1], R = H.shape[2], CO = H.shape[3]
     
-    # 4D Vectors.
+    # MemoryView objects.
     cdef MemoryView[T]* _E = new MemoryView[T]( &E[0,0,0,0], [CU, M, R, CO] )
     cdef MemoryView[T]* _H = new MemoryView[T]( &H[0,0,0,0], [CU, M, R, CO] )
     cdef MemoryView[T]* _D = new MemoryView[T]( &D[0,0,0,0], [CU, M, R, CO] )
@@ -139,7 +143,7 @@ def curl_H( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, ndim
     cdef int x, offset, first, last, start, stop
     cdef int c = CU/Np, _offset = CU%Np
     cdef int _Np = Np
-    cdef int _sc = sc
+    cdef T   _sc = sc
     
     
     with nogil:
@@ -159,14 +163,14 @@ def curl_H( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, ndim
         free( _E ); free( _H ); free( _D );
         free( _curl );
 
-def curl_E_FF( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, ndim=4] D, np.ndarray[T, ndim=3] curl, sc, Np ):
+def curl_E_FF( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, ndim=4] D, np.ndarray[T, ndim=3] curl, T sc, int Np ):
     
     # Get the size of the input data structures.
     cdef int CU = H.shape[0], M = H.shape[1], R = H.shape[2], CO = H.shape[3]
-    cdef int _sc = sc
     cdef int _Np = Np
+    cdef T   _sc = sc
     
-    # 4D Vectors.
+    # MemoryView objects.
     cdef MemoryView[T]* _E = new MemoryView[T]( &E[0,0,0,0], [CU, M, R, CO] )
     cdef MemoryView[T]* _H = new MemoryView[T]( &H[0,0,0,0], [CU, M, R, CO] )
     cdef MemoryView[T]* _D = new MemoryView[T]( &D[0,0,0,0], [CU, M, R, CO] )
@@ -181,10 +185,10 @@ def curl_H_FF( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, n
     
     # Get the size of the input data structures.
     cdef int CU = H.shape[0], M = H.shape[1], R = H.shape[2], CO = H.shape[3]
-    cdef int _sc = sc
     cdef int _Np = Np
+    cdef T   _sc = sc
     
-    # 4D Vectors.
+    # MemoryView objects.
     cdef MemoryView[T]* _E = new MemoryView[T]( &E[0,0,0,0], [CU, M, R, CO] )
     cdef MemoryView[T]* _H = new MemoryView[T]( &H[0,0,0,0], [CU, M, R, CO] )
     cdef MemoryView[T]* _D = new MemoryView[T]( &D[0,0,0,0], [CU, M, R, CO] )
