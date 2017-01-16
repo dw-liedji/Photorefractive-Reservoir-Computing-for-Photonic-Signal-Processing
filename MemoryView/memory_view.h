@@ -62,8 +62,8 @@ namespace algebra
             MemoryView( const std::vector<size_dim> dimensions ) /*: Base<T>( dimensions )*/
             {
                 build<std::vector<size_dim>>( dimensions );
-                _data = (T*) calloc( _range.getTotalSize(), sizeof( T ) );
-                //_data = (T*) _mm_malloc( total_size * sizeof( T ), BLOCK );
+                //_data = (T*) calloc( _range.getTotalSize(), sizeof( T ) );
+                _data = (T*) _mm_malloc( total_size * sizeof( T ), BLOCK );
             }
             
             MemoryView( T* data, const std::vector<size_dim> dimensions ) /*: Base<T>( data, dimensions )*/
@@ -80,7 +80,7 @@ namespace algebra
             
             MemoryView( const MemoryView<T>* other ) /*: Base<T>( other )*/
             {
-                _size           = other->_size;
+                _size = other->_size;
                 
                 memcpy( _dimensions, other->_dimensions, sizeof( size_m ) * MAX_DIMENSIONS );
                 memcpy( _sizeDimensions, other->_sizeDimensions, sizeof( size_dim ) * MAX_DIMENSIONS );
@@ -89,7 +89,7 @@ namespace algebra
                 memcpy( _positions, other->_positions, sizeof( size_dim ) * MAX_DIMENSIONS );
                 
                 _data = other->_data;
-                _range = other->_range;
+                memcpy( &_range, &other->_range, sizeof( Range ) );
             }
         
         private:
@@ -593,7 +593,7 @@ namespace algebra
         
         public:
             ~MemoryView()
-            { if(_data != NULL) free( _data ); }
+            { if(_data != NULL) _mm_free( _data ); }
     };
 }
 
