@@ -6,7 +6,7 @@ CC=g++
 PYTHON=/usr/include/python2.7
 
 LDFLAGS=-I $(PYTHON) -I $$FF_ROOT
-OPT_FLAGS= -O3 -msse2 -DNO_DEFAULT_MAPPING
+OPT_FLAGS= -O3 -msse2 #-DNO_DEFAULT_MAPPING
 FLAGS=-Wall -std=c++11 -g -pthread -fopenmp -fPIC
 
 CFLAGS= $(FLAGS) -fno-strict-aliasing -DNDEBUG -fwrapv -fPIC -c
@@ -30,7 +30,7 @@ lib:
 clean:
 	rm -f *.so *.o *~ $(TEST_EXE) $(SRC).cpp
 
-# Run the cplusplus test file.
+# Run the C++ test file.
 test:
 	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(FLAGS) $(TEST_EXE).cpp -o $(TEST_EXE)
 	./$(TEST_EXE) $(THREADS)
@@ -38,7 +38,7 @@ test:
 run:
 	make clean
 	make lib
-	@echo "\n======================"
+	@echo -e "\n======================"
 	@echo "RUNNING:"
-	@echo "======================\n"
+	@echo -e "======================\n"
 	$(RUN_CMD) $(EXE)
