@@ -25,12 +25,14 @@ CO = 3
 
 Q  = 20
 
+Np = 24
+
 print "Matrix: ",CU,"x",M,"x",R,"x",CO
 print "Q = ",Q
 
 # In[2]:
 tt=time()
-grd = grid.Grid((CU,M,R,CO), pml_thickness=10)
+grd = grid.Grid((CU,M,R,CO), Np, pml_thickness=10)
 
 
 # ## Source
@@ -53,7 +55,6 @@ print "Setup time: " , time()-tt
 # The FDTD can be run in two different ways:
 
 # In[4]:
-Np = 24
 for n in xrange(1,Np+1):
   t1=time()
   grd.run_fdtd(Q,n)

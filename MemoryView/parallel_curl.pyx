@@ -27,8 +27,8 @@ cdef extern from "ff_curl.h" namespace "ff_curl_parallel" nogil:
     cdef cppclass FF_cube[T]:
         FF_cube()
         FF_cube( int )
-        void curl_E( MemoryView[T]*, MemoryView[T]*, MemoryView[T]*, MemoryView[T]*, T, size_m, size_m, size_m, size_m )
-        void curl_H( MemoryView[T]*, MemoryView[T]*, MemoryView[T]*, MemoryView[T]*, T, size_m, size_m, size_m, size_m )
+        void curl_E( int, MemoryView[T]*, MemoryView[T]*, MemoryView[T]*, MemoryView[T]*, T, size_m, size_m, size_m, size_m )
+        void curl_H( int, MemoryView[T]*, MemoryView[T]*, MemoryView[T]*, MemoryView[T]*, T, size_m, size_m, size_m, size_m )
 
 cdef extern from "memory_view.h" namespace "algebra" nogil:
     cdef cppclass MemoryView[T]:
@@ -49,6 +49,13 @@ cdef extern from "memory_view.h" namespace "algebra" nogil:
 
 # Define the type of the elements.
 ctypedef float T
+
+# FastFlow object.
+cdef FF_cube[T]* ff = NULL
+
+def init( Np ): # Init the objects used in the computation.
+    global ff
+    ff = new FF_cube[T]( Np )
 
 
 def seq_curl_E(E): # Transforms an E field into an H field by performing a curl
@@ -157,6 +164,7 @@ def curl_E_FF( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, n
     # Get the size of the input data structures.
     cdef int CU = H.shape[0], M = H.shape[1], R = H.shape[2], CO = H.shape[3]
     cdef int _sc = sc
+    cdef int _Np = Np
     
     # 4D Vectors.
     cdef MemoryView[T]* _E = new MemoryView[T]( &E[0,0,0,0], [CU, M, R, CO] )
@@ -164,12 +172,8 @@ def curl_E_FF( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, n
     cdef MemoryView[T]* _D = new MemoryView[T]( &D[0,0,0,0], [CU, M, R, CO] )
     cdef MemoryView[T]* _curl = new MemoryView[T]( &curl[0,0,0], [CU, M, 1, CO] )
     
-    # FastFlow object.
-    cdef FF_cube[T]* ff = new FF_cube[T]( Np )
-    
     with nogil:
-        ff.curl_E( _E, _H, _D, _curl, _sc, CU, M, R, CO )
-        del ff
+        ff.curl_E( _Np, _E, _H, _D, _curl, _sc, CU, M, R, CO )
         free( _E ); free( _H ); free( _D ); free( _curl );
 
 
@@ -178,6 +182,7 @@ def curl_H_FF( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, n
     # Get the size of the input data structures.
     cdef int CU = H.shape[0], M = H.shape[1], R = H.shape[2], CO = H.shape[3]
     cdef int _sc = sc
+    cdef int _Np = Np
     
     # 4D Vectors.
     cdef MemoryView[T]* _E = new MemoryView[T]( &E[0,0,0,0], [CU, M, R, CO] )
@@ -185,10 +190,6 @@ def curl_H_FF( np.ndarray[T, ndim=4] E, np.ndarray[T, ndim=4] H, np.ndarray[T, n
     cdef MemoryView[T]* _D = new MemoryView[T]( &D[0,0,0,0], [CU, M, R, CO] )
     cdef MemoryView[T]* _curl = new MemoryView[T]( &curl[0,0,0], [CU, M, 1, CO] )
     
-    # FastFlow object.
-    cdef FF_cube[T]* ff = new FF_cube[T]( Np )
-    
     with nogil:
-        ff.curl_H( _E, _H, _D, _curl, _sc, CU, M, R, CO )
-        del ff
+        ff.curl_H( _Np, _E, _H, _D, _curl, _sc, CU, M, R, CO )
         free( _E ); free( _H ); free( _D ); free( _curl );
