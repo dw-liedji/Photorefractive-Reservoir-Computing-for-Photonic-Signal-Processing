@@ -443,7 +443,8 @@ namespace algebra
                 return slice( boundaries );
             }
             
-            void curl_H( MemoryView<T>* IN, MemoryView<T>* OUT, MemoryView<T>* D, MemoryView<T>* curl, const T sc, const bool first )
+            void curl_H( MemoryView<T>* IN, MemoryView<T>* OUT, MemoryView<T>* D,
+                         MemoryView<T>* curl, const T sc, const bool first )
             {
                 MemoryView<T> ret( IN->getDimensions() );
 	            if(first) {
@@ -488,9 +489,10 @@ namespace algebra
 	                *(curl[0]["1:"]) = ret["1:,:,1,:"];
 	                *(OUT[0]["1:"]) += *ret["1:"] * (*D[0]["1:"] * sc);
                 }
-	        }
+            }
             
-            void curl_E( MemoryView<T>* IN, MemoryView<T>* OUT, MemoryView<T>* D, MemoryView<T>* curl, const T sc, const bool last )
+            void curl_E( MemoryView<T>* IN, MemoryView<T>* OUT, MemoryView<T>* D,
+                         MemoryView<T>* curl, const T sc, const bool last )
             {
                 MemoryView<T> ret( IN->getDimensions() );
                 if(last) {
@@ -541,8 +543,8 @@ namespace algebra
             {
                 printf( "RANGES = [" );
                 for(size_dim i = 0; i < _size-1; i++)
-                    printf( "(%d, %d), ", _range._boundaries[i].first, _range._boundaries[i].second );
-                printf( "(%d, %d)", _range._boundaries[_size-1].first, _range._boundaries[_size-1].second );
+                    printf( "(%ld, %ld), ", _range._boundaries[i].first, _range._boundaries[i].second );
+                printf( "(%ld, %ld)", _range._boundaries[_size-1].first, _range._boundaries[_size-1].second );
                 printf( "]\n");
             }
             
@@ -590,7 +592,8 @@ namespace algebra
             }
         
         public:
-            ~MemoryView(){ if(_data != NULL) free( _data ); }
+            ~MemoryView()
+            { if(_data != NULL) free( _data ); }
     };
 }
 
