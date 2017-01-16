@@ -89,7 +89,7 @@ namespace algebra
                 memcpy( _positions, other->_positions, sizeof( size_dim ) * MAX_DIMENSIONS );
                 
                 _data = other->_data;
-                memcpy( &_range, &other->_range, sizeof( Range ) );
+                memcpy( &_range, &(other->_range), sizeof( Range ) );
             }
         
         private:
