@@ -8,12 +8,8 @@
 
 #include <omp.h>
 
-#define __DEBUG__ 0
-
-//#include "ff_curl.h"
 #include "memory_view.h"
 
-//using namespace ff_curl_parallel;
 using namespace algebra;
 
 // Type of the elements.
@@ -69,64 +65,20 @@ void curl_H_OPENMP( int Np, MemoryView<T>* E, MemoryView<T>* H, MemoryView<T>* D
 
 int main( int argc, char* argv[] )
 {
-#if __DEBUG__
-    const size_m CU = 2;
-    const size_m M  = 2;
-    const size_m R  = 3;
+    const size_m CU = 300;
+    const size_m M  = 300;
+    const size_m R  = 300;
     const size_m CO = 3;
-#else
-    const size_m CU = 700;
-    const size_m M  = 700;
-    const size_m R  = 250;
-    const size_m CO = 3;
-#endif
     
     MemoryView<V>* H = new MemoryView<V>( { CU, M, R, CO } ); *H = 2;
     MemoryView<V>* E = new MemoryView<V>( { CU, M, R, CO } ); *E = 5;
     MemoryView<V>* D = new MemoryView<V>( { CU, M, R, CO } ); *D = 4;
     MemoryView<V>* curl = new MemoryView<V>( { CU, M, 1, CO } );
     
-#if __DEBUG__
-    /*MemoryView<V>* tmp1 = new MemoryView<V>( { CU, M, R, CO } ); *tmp1 = 3;
-    MemoryView<V>* tmp2 = new MemoryView<V>( { CU, M, R } ); *tmp2 = 2;
-    
-    *tmp2 = (*tmp1)[":,:,:,1"];
-    //printf("TMP2\n");
-    //tmp2->print_out();
-    
-    *H = 2; *E = 5; *D = 4;
-    
-    *(*D)["1:,:,:,:"] = *((*H)["1:,:,:,:"]) + (*E)["1:,:,:,:"];
-    *(*D)["1:,:,:,1"] -= (*((*H)["1:,:,:,2"]) -(*E)[":-1,:,:,2"]);
-    *(*D)["1:,:,:,1"] -= (*H)["1:,:,:,2"];
-    //D->print_out();*/
-    
-    MemoryView<V> F( { CU, M, R, CO } );
-    *(F["1,1,1,1"]) = 5;
-    //F.print_out();
-    
-    MemoryView<V>* tmp = new MemoryView<V>( { CU, M, R } );
-    *tmp = F;
-    tmp->print_out();
-    
-    //MemoryView<V>* G = new MemoryView<V>( &F );
-    MemoryView<V> G( { CU, M, R, CO } );
-    
-    F = 5;
-    *(G["1:"]) = F["1:"];
-    G.print_out();
-    
-    //G.curl_E( H, E, D, curl, sc, true );
-    
-    //F["1:"]->print_out();
-    //E->print_out();
-    //printf( "\n" );
-    //G["1:,1:,1:,1:"]->print_out();
-#else
-    const int Q = 1;
+    const int Q = 20;
     const int Np = stoll( argv[1] );
     
-    printf( "INIZIO IL CURL\n" );
+    std::cout << "Start the CURL operations..\n";
     
     for(int n = 1; n <= Np; n++) {
         std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
@@ -140,8 +92,6 @@ int main( int argc, char* argv[] )
         std::chrono::duration<double> elapsed_seconds = std::chrono::system_clock::now()-start;
         std::cout << "elapsed time: " << elapsed_seconds.count() << "s, N: " << n << "\n";
     }
-    
-    printf( "TERMINATO\n" );
 #endif
     
     delete H;
