@@ -35,39 +35,39 @@ typedef int64_t size_m;
 #if defined( __AVX512F__ ) || defined( __AVX512ER__ ) || defined( __AVX512BW__ ) || defined( __AVX512CD__ ) || \
     defined( __AVX512PF__ ) || defined( __AVX512VL__ ) || defined( __AVX512DQ__ )
     #include <zmmintrin.h>
-    #define BLOCK               64
-    #define MM_VECT(suffix)     __m512 ## suffix
-    #define MM_LOAD(suffix)     _mm512_load_p ## suffix
-    #define MM_STORE(suffix)    _mm512_store_p ## suffix
-    #define MM_ADD(suffix)      _mm512_add_p ## suffix
-    #define MM_SUB(suffix)      _mm512_sub_p ## suffix
-    #define MM_MUL(suffix)      _mm512_mul_p ## suffix
-	#define MM_DIV(suffix)      _mm512_div_p ## suffix
-    #define MM_SET1(suffix)     _mm512_set1_p ## suffix
+    #define BLOCK       64
+    #define MM_VECT     __m512d
+    #define MM_LOAD     _mm512_load_pd
+    #define MM_STORE    _mm512_store_pd
+    #define MM_ADD      _mm512_add_pd
+    #define MM_SUB      _mm512_sub_pd
+    #define MM_MUL      _mm512_mul_pd
+	#define MM_DIV      _mm512_div_pd
+    #define MM_SET1     _mm512_set1_pd
 #elif defined( __AVX__ ) || defined( __AVX2__ )
     #include <immintrin.h>
-    #define BLOCK               32
-    #define MM_VECT(suffix)     __m256 ## suffix
-    #define MM_LOAD(suffix)     _mm256_load_p ## suffix
-    #define MM_STORE(suffix)    _mm256_store_p ## suffix
-    #define MM_ADD(suffix)      _mm256_add_p ## suffix
-    #define MM_SUB(suffix)      _mm256_sub_p ## suffix
-    #define MM_MUL(suffix)      _mm256_mul_p ## suffix
-	#define MM_DIV(suffix)      _mm256_div_p ## suffix
-    #define MM_SET1(suffix)     _mm256_set1_p ## suffix
+    #define BLOCK       32
+    #define MM_VECT     __m256d
+    #define MM_LOAD     _mm256_load_pd
+    #define MM_STORE    _mm256_store_pd
+    #define MM_ADD      _mm256_add_pd
+    #define MM_SUB      _mm256_sub_pd
+    #define MM_MUL      _mm256_mul_pd
+	#define MM_DIV      _mm256_div_pd
+    #define MM_SET1     _mm256_set1_pd
 #elif defined( __SSE__ ) || defined( __SSE2__ ) || defined( __SSE3__ ) || defined( __SSE4__ )
     #include <xmmintrin.h>
-    #define BLOCK               16
-    #define MM_VECT(suffix)     __m128 ## suffix
-    #define MM_LOAD(suffix)     _mm_load_p ## suffix
-    #define MM_STORE(suffix)    _mm_store_p ## suffix
-    #define MM_ADD(suffix)      _mm_add_p ## suffix
-    #define MM_SUB(suffix)      _mm_sub_p ## suffix
-    #define MM_MUL(suffix)      _mm_mul_p ## suffix
-	#define MM_DIV(suffix)      _mm_div_p ## suffix
-    #define MM_SET1(suffix)     _mm_set1_p ## suffix
+    #define BLOCK       16
+    #define MM_VECT     __m128d
+    #define MM_LOAD     _mm_load_pd
+    #define MM_STORE    _mm_store_pd
+    #define MM_ADD      _mm_add_pd
+    #define MM_SUB      _mm_sub_pd
+    #define MM_MUL      _mm_mul_pd
+	#define MM_DIV      _mm_div_pd
+    #define MM_SET1     _mm_set1_pd
 #else
-	#define BLOCK               sizeof( T )
+	#define BLOCK       sizeof( T )
     #define NO_VECTORIALIZATION
 #endif
 

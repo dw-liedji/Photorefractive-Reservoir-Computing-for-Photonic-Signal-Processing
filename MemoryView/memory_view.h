@@ -37,6 +37,9 @@ namespace algebra
         public:
             T* _data = NULL;
             size_dim _index;
+        #ifndef NO_VECTORIALIZATION
+            MM_VECT* _x_vec;
+        #endif
         private:
             Range _range;
             
@@ -62,8 +65,7 @@ namespace algebra
             MemoryView( const std::vector<size_dim> dimensions ) /*: Base<T>( dimensions )*/
             {
                 build<std::vector<size_dim>>( dimensions );
-                //_data = (T*) calloc( _range.getTotalSize(), sizeof( T ) );
-                _data = (T*) _mm_malloc( total_size * sizeof( T ), BLOCK );
+                _data = (T*) _mm_malloc( _range.getTotalSize() * sizeof( T ), BLOCK );
             }
             
             MemoryView( T* data, const std::vector<size_dim> dimensions ) /*: Base<T>( data, dimensions )*/
@@ -80,7 +82,7 @@ namespace algebra
             
             MemoryView( const MemoryView<T>* other ) /*: Base<T>( other )*/
             {
-                _size = other->_size;
+                _size           = other->_size;
                 
                 memcpy( _dimensions, other->_dimensions, sizeof( size_m ) * MAX_DIMENSIONS );
                 memcpy( _sizeDimensions, other->_sizeDimensions, sizeof( size_dim ) * MAX_DIMENSIONS );
@@ -89,7 +91,7 @@ namespace algebra
                 memcpy( _positions, other->_positions, sizeof( size_dim ) * MAX_DIMENSIONS );
                 
                 _data = other->_data;
-                memcpy( &_range, &(other->_range), sizeof( Range ) );
+                _range = other->_range;
             }
         
         private:
@@ -179,6 +181,11 @@ namespace algebra
                     _positions[i] = _index;
             }
             
+        #ifndef NO_VECTORIALIZATION
+            INLINE void loadVector()
+            { _x_vec = (MM_VECT*) (_data + _index); }
+        #endif
+            
             INLINE bool isSliced()
             { return _range.isSliced(); }
             
@@ -244,9 +251,7 @@ namespace algebra
                                                    Function<MemoryView,T>::sum );
                 
             #ifndef NO_VECTORIALIZATION
-                if(typeid(T) == typeid(double))     _fun->addFunction_d( Function<MemoryView,T>::v_sum_d );
-                else if(typeid(T) == typeid(float)) _fun->addFunction_f( Function<MemoryView,T>::v_sum_f );
-                //else if(typeid(T) == typeid(int))   _fun->addFunction_f( Function<MemoryView,T>::v_sum_i );
+                _fun->addVectFunction( Function<MemoryView,T>::v_sum );
             #endif
                 
                 _fun->addNext( in->_fun );
@@ -263,9 +268,7 @@ namespace algebra
                                                    Function<MemoryView,T>::sub );
                 
             #ifndef NO_VECTORIALIZATION
-                if(typeid(T) == typeid(double))     _fun->addFunction_d( Function<MemoryView,T>::v_sub_d );
-                else if(typeid(T) == typeid(float)) _fun->addFunction_f( Function<MemoryView,T>::v_sub_f );
-                //else if(typeid(T) == typeid(int))   _fun->addFunction_i( Function<MemoryView,T>::v_sub_i );
+                _fun->addVectFunction( Function<MemoryView,T>::v_sub );
             #endif
                 
                 _fun->addNext( in->_fun );
@@ -282,9 +285,7 @@ namespace algebra
                                                    Function<MemoryView,T>::mul );
                 
             #ifndef NO_VECTORIALIZATION
-                if(typeid(T) == typeid(double))     _fun->addFunction_d( Function<MemoryView,T>::v_mul_d );
-                else if(typeid(T) == typeid(float)) _fun->addFunction_f( Function<MemoryView,T>::v_mul_f );
-                //else if(typeid(T) == typeid(int))   _fun->addFunction_i( Function<MemoryView,T>::v_mul_i );
+                _fun->addVectFunction( Function<MemoryView,T>::v_mul );
             #endif
                 
                 _fun->addNext( in->_fun );
@@ -298,9 +299,7 @@ namespace algebra
                                                    Function<MemoryView,T>::mul, value );
                 
             #ifndef NO_VECTORIALIZATION
-                if(typeid(T) == typeid(double))     _fun->addConstFunction_d( Function<MemoryView,T>::v_mul_d );
-                else if(typeid(T) == typeid(float)) _fun->addConstFunction_f( Function<MemoryView,T>::v_mul_f );
-                //else if(typeid(T) == typeid(int))   _fun->addConstFunction_i( Function<MemoryView,T>::v_sum_i );
+                _fun->addConstFunction( Function<MemoryView,T>::v_mul );
             #endif
                 
                 return this;
@@ -310,73 +309,50 @@ namespace algebra
             {
                 _range.checkSize( "operator*=", __LINE__, in->_range );
                 
-                if(typeid(T) == typeid(float)) {       COMPUTE_OP_MULTI( *=, MM_MUL( s )( x_vec, FUN_CALL_POINTER( fun, f ) ), MM_MUL( s )( x_vec1, x_vec2 ), float,   , s ); }
-                else if(typeid(T) == typeid(double)) { COMPUTE_OP_MULTI( *=, MM_MUL( d )( x_vec, FUN_CALL_POINTER( fun, d ) ), MM_MUL( d )( x_vec1, x_vec2 ), double, d, d ); }
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_MULTI( *=, MM_MUL( s )( x_vec, FUN_CALL_POINTER( fun, i ) ), MM_MUL( s )( x_vec1, x_vec2 ), int,    i, i ); }
-                
+                COMPUTE_OP_MULTI( *=, MM_MUL( _x_vec[i], fun->apply_vect( i ) ), MM_MUL( _x_vec[i], in->_x_vec[i] ) );
                 return this;
             }
             
             inline MemoryView<T>* operator*=( const T& val )
             {
                 const T value ALIGN = val;
-                
-                if(typeid(T) == typeid(float)) {       COMPUTE_OP_CONST( *=, MM_MUL( s )( x_vec1, x_vec2 ), float,   , s ); }
-                else if(typeid(T) == typeid(double)) { COMPUTE_OP_CONST( *=, MM_MUL( d )( x_vec1, x_vec2 ), double, d, d ); }
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_CONST( *=, MM_MUL( i )( x_vec1, x_vec2 ), int,    i, i ); }
-                
+                COMPUTE_OP_CONST( *=, MM_MUL( _x_vec[i], x_c_vec ) );
                 return this;
             }
             
             inline MemoryView<T>* operator=( MemoryView<T>* in )
             {
+                if(in->_fun == NULL && !isSliced()) {
+                    // TODO Set the values of the input matrix into the destination matrix.
+                    return in;
+                }
+                
                 _range.checkSize( "operator=", __LINE__, in->_range );
                 
-                if(_fun == NULL && !isSliced())
-                    return in;
-                
-                //COMPUTE_OP_MULTI( OP, VECT_OP, BINARY_OP, V, type_suffix, op_suffix )
-                if(typeid(T) == typeid(float)) {       COMPUTE_OP_MULTI( =, FUN_CALL_POINTER( fun, f ), x_vec1 = x_vec2, float,   , s ); }
-                else if(typeid(T) == typeid(double)) { COMPUTE_OP_MULTI( =, FUN_CALL_POINTER( fun, d ), x_vec1 = x_vec2, double, d, d ); }
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_MULTI( =, FUN_CALL_POINTER( fun, i ), x_vec1 = x_vec2, int,    i, i ); }
-                
+                COMPUTE_OP_MULTI( =, fun->apply_vect( i ), in->_x_vec[i] );
                 return this;
             }
             
             inline MemoryView<T>* operator=( const T& val )
             {
                 const T value ALIGN = val;
-                
-                if(typeid(T) == typeid(float)) {       COMPUTE_OP_CONST( =, x_vec2, float,   , s ); }
-                else if(typeid(T) == typeid(double)) { COMPUTE_OP_CONST( =, x_vec2, double, d, d ); }
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_CONST( *=, x_vec2, int,    i, i ); }
-                
+                COMPUTE_OP_CONST( =, x_c_vec );
                 return this;
             }
             
             inline MemoryView<T>* operator+=( MemoryView<T>* in )
-            { return plus_equals( in ); }
-            
-            inline MemoryView<T>* plus_equals( MemoryView<T>* in )
             {
                 _range.checkSize( "operator+=", __LINE__, in->_range );
-                if(typeid(T) == typeid(float)) {       COMPUTE_OP_MULTI( +=, MM_ADD( s )( x_vec, FUN_CALL_POINTER( fun, f ) ), MM_ADD( s )( x_vec1, x_vec2 ), float,   , s ); }
-                else if(typeid(T) == typeid(double)) { COMPUTE_OP_MULTI( +=, MM_ADD( d )( x_vec, FUN_CALL_POINTER( fun, d ) ), MM_ADD( d )( x_vec1, x_vec2 ), double, d, d ); }
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_MULTI( +=, MM_ADD( s )( x_vec, FUN_CALL_POINTER( fun, i ) ), MM_ADD( s )( x_vec1, x_vec2 ), int,    i, i ); }
                 
+                COMPUTE_OP_MULTI( +=, MM_ADD( _x_vec[i], fun->apply_vect( i ) ), MM_ADD( _x_vec[i], in->_x_vec[i] ) );
                 return this;
             }
             
             inline MemoryView<T>* operator-=( MemoryView<T>* in )
-            { return minus_equals( in ); }
-            
-            inline MemoryView<T>* minus_equals( MemoryView<T>* in )
             {
                 _range.checkSize( "operator-=", __LINE__, in->_range );
-                if(typeid(T) == typeid(float)) {       COMPUTE_OP_MULTI( -=, MM_SUB( s )( x_vec, FUN_CALL_POINTER( fun, f ) ), MM_SUB( s )( x_vec1, x_vec2 ), float,   , s ); }
-                else if(typeid(T) == typeid(double)) { COMPUTE_OP_MULTI( -=, MM_SUB( d )( x_vec, FUN_CALL_POINTER( fun, d ) ), MM_SUB( d )( x_vec1, x_vec2 ), double, d, d ); }
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_MULTI( -=, MM_SUB( s )( x_vec, FUN_CALL_POINTER( fun, i ) ), MM_SUB( s )( x_vec1, x_vec2 ), int,    i, i ); }
                 
+                COMPUTE_OP_MULTI( -=, MM_SUB( _x_vec[i], fun->apply_vect( i ) ), MM_SUB( _x_vec[i], in->_x_vec[i] ) );
                 return this;
             }
             
@@ -443,8 +419,7 @@ namespace algebra
                 return slice( boundaries );
             }
             
-            void curl_H( MemoryView<T>* IN, MemoryView<T>* OUT, MemoryView<T>* D,
-                         MemoryView<T>* curl, const T sc, const bool first )
+            void curl_H( MemoryView<T>* IN, MemoryView<T>* OUT, MemoryView<T>* D, MemoryView<T>* curl, const T sc, const bool first )
             {
                 MemoryView<T> ret( IN->getDimensions() );
 	            if(first) {
@@ -489,10 +464,9 @@ namespace algebra
 	                *(curl[0]["1:"]) = ret["1:,:,1,:"];
 	                *(OUT[0]["1:"]) += *ret["1:"] * (*D[0]["1:"] * sc);
                 }
-            }
+	        }
             
-            void curl_E( MemoryView<T>* IN, MemoryView<T>* OUT, MemoryView<T>* D,
-                         MemoryView<T>* curl, const T sc, const bool last )
+            void curl_E( MemoryView<T>* IN, MemoryView<T>* OUT, MemoryView<T>* D, MemoryView<T>* curl, const T sc, const bool last )
             {
                 MemoryView<T> ret( IN->getDimensions() );
                 if(last) {

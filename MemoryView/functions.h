@@ -36,7 +36,7 @@
         }                                                     \
     }
 	
-/* Iterations performed in a linearly sequential manner. */
+/* Iterations performed in a linear sequential manner. */
 #define LINEAR_SEQUENTIAL_OP( OP, ITERATIONS, R_VALUE ) \
     for(size_dim i = 0; i < ITERATIONS; i++)            \
         _data[_index++] OP R_VALUE;
@@ -44,9 +44,9 @@
 
 #ifdef NO_VECTORIALIZATION
 	// Empty declarations.
-	#define COMPUTE_OP_VECTORIALIZED( VECT_OP, R_VALUE, OP, V, UPDATE, type_suffix, op_suffix ) ;
-	#define COMPUTE_OP_CONST_VECTORIALIZED( VECT_OP, R_VALUE, OP, V, type_suffix, op_suffix ) ;
-	#define COMPUTE_OP_BINARY_VECTORIALIZED( VECT_OP, OP, V, type_suffix, op_suffix ) ;
+	#define COMPUTE_OP_VECTORIALIZED( VECT_OP, R_VALUE, OP, UPDATE ) ;
+	#define COMPUTE_OP_CONST_VECTORIALIZED( VECT_OP, R_VALUE, OP, UPDATE ) ;
+	#define COMPUTE_OP_BINARY_VECTORIALIZED( VECT_OP, OP ) ;
 #else
     /* Align the vector to the BLOCK-th byte. */
     #define ALIGNMENT( OP, R_VALUE, UPDATE )    \
@@ -56,116 +56,108 @@
             _data[_index++] OP R_VALUE;         \
         UPDATE;
     
-	#define COMPUTE_OP_VECTORIALIZED( VECT_OP, R_VALUE, OP, V, UPDATE, type_suffix, op_suffix ) \
-        ALIGNMENT( OP, R_VALUE, (fun->update( 1, i )) )                                         \
-                                                                                                \
-		const size_dim n    = (N - toAlign) / block;                                            \
-		const size_dim rest = (N - toAlign) % block;                                            \
-		MM_VECT(type_suffix) x_vec;                                                             \
-		for(i = 0; i < n; i++, _index += block) {                                               \
-			x_vec = MM_LOAD(op_suffix)( (V*) (_data + _index) );                                \
-			x_vec = VECT_OP;                                                                    \
-			MM_STORE(op_suffix)( (V*) (_data + _index), x_vec );                                \
-			UPDATE;                                                                             \
-		}                                                                                       \
-                                                                                                \
+	#define COMPUTE_OP_VECTORIALIZED( VECT_OP, R_VALUE, OP, UPDATE ) \
+        ALIGNMENT( OP, R_VALUE, (fun->update( 1, i )) )              \
+                                                                     \
+		const size_dim n    = (N - toAlign) / block;                 \
+		const size_dim rest = (N - toAlign) % block;                 \
+		loadVector();                                                \
+		fun->loadVector();                                           \
+		for(i = 0; i < n; i++) {                                     \
+			_x_vec[i] = VECT_OP;                                     \
+			UPDATE;                                                  \
+		}                                                            \
+                                                                     \
 		LINEAR_SEQUENTIAL_OP( OP, rest, R_VALUE );
 	
-	#define COMPUTE_OP_CONST_VECTORIALIZED( VECT_OP, R_VALUE, OP, V, type_suffix, op_suffix )   \
-	    ALIGNMENT( OP, R_VALUE,  )                                                              \
-		                                                                                        \
-		const size_dim n    = (N - toAlign) / block;                                            \
-		const size_dim rest = (N - toAlign) % block;                                            \
-		MM_VECT(type_suffix) x_vec1, x_vec2 = MM_SET1(op_suffix)( value );                      \
-		for(i = 0; i < n; i++, _index += block) {                                               \
-			x_vec1 = MM_LOAD(op_suffix)( (V*) (_data + _index) );                               \
-			x_vec1 = VECT_OP;                                                                   \
-			MM_STORE(op_suffix)( (V*) (_data + _index), x_vec1 );                               \
-		}                                                                                       \
-																			                    \
+	#define COMPUTE_OP_CONST_VECTORIALIZED( VECT_OP, R_VALUE, OP ) \
+	    ALIGNMENT( OP, R_VALUE,  )                                 \
+		                                                           \
+		const size_dim n    = (N - toAlign) / block;               \
+		const size_dim rest = (N - toAlign) % block;               \
+		_x_vec = (MM_VECT*) (_data + _index);                      \
+		T _a_val[sizeof(T)] ALIGN;                                 \
+        for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = value; \
+        MM_VECT x_c_vec = ((MM_VECT*) _a_val)[0];                  \
+		for(i = 0; i < n; i++, _index += block)                    \
+			_x_vec[i] = VECT_OP;                                   \
+                                                                   \
 		LINEAR_SEQUENTIAL_OP( OP, rest, R_VALUE );
-
-	#define COMPUTE_OP_BINARY_VECTORIALIZED( VECT_OP, OP, V, type_suffix, op_suffix )       \
-	    ALIGNMENT( OP, in->_data[in->_index++],  )                                          \
-		                                                                                    \
-		const size_dim n    = (N - toAlign) / block;                                        \
-		const size_dim rest = (N - toAlign) % block;                                        \
-		size_dim inIndex = in->_index;                                                      \
-		for(i = 0; i < n; i++, _index += block, inIndex += block) {                         \
-			MM_VECT(type_suffix) x_vec1 = MM_LOAD(op_suffix)( (V*) (_data + _index) );      \
-			MM_VECT(type_suffix) x_vec2 = MM_LOAD(op_suffix)( (V*) (in->_data + inIndex) ); \
-			MM_STORE(op_suffix)( (V*) (_data + _index), VECT_OP );                          \
-		}                                                                                   \
-                                                                                            \
+    
+	#define COMPUTE_OP_BINARY_VECTORIALIZED( VECT_OP, OP )         \
+	    ALIGNMENT( OP, in->_data[in->_index++],  )                 \
+		                                                           \
+		const size_dim n    = (N - toAlign) / block;               \
+		const size_dim rest = (N - toAlign) % block;               \
+		fun->loadVector();                                         \
+		size_dim inIndex = in->_index;                             \
+		for(i = 0; i < n; i++, _index += block, inIndex += block)  \
+			_x_vec[i] = VECT_OP;                                   \
+                                                                   \
 		LINEAR_SEQUENTIAL_OP( OP, rest, in->_data[in->_index++] );
 #endif
 
 
 // Operation used when all the involved elements are vectors.
-#define COMPUTE_OP_MULTI( OP, VECT_OP, BINARY_OP, V, type_suffix, op_suffix )                  \
-    loadIndex();                                                                               \
-    Function<MemoryView,T>* fun = in->_fun;                                                    \
-    if(fun != NULL) {                                                                          \
-        fun->init();                                                                           \
-        if(!isSubBlock() || !fun->allSubBlocks()) {                                            \
-	        /* Not linear sequential. */                                                       \
-            NON_LINEAR_SEQUENTIAL_OP( fun->apply( j ), OP, fun->update<0>( _size-i ) );        \
-        }                                                                                      \
-        else{                                                                                  \
-            /* Get the total size of the section. */                                           \
-            const size_dim N = _range.getTotalSize();                                          \
-            if(!VECTORIALIZATION || !isAlignable() || !fun->allAlignable( toAlignment() )) {   \
-                LINEAR_SEQUENTIAL_OP( OP, N, fun->apply( i ) );                                \
-            }                                                                                  \
-            else {                                                                             \
-		        /* Vectorialized solution. */                                                  \
-                COMPUTE_OP_VECTORIALIZED( VECT_OP, fun->apply( i ),                            \
-                                          OP, V, (fun->update( 1, block )),                    \
-                                          type_suffix, op_suffix );                            \
-            }                                                                                  \
-        }                                                                                      \
-    }                                                                                          \
-    else {                                                                                     \
-        in->loadIndex();                                                                       \
-        if(!isSubBlock() || !in->isSubBlock()) {                                               \
-            NON_LINEAR_SEQUENTIAL_OP( in->_data[in->_index+j], OP, in->update<0>( _size-i ) ); \
-        }                                                                                      \
-        else {                                                                                 \
-            /* Get the total size of the section. */                                           \
-            const size_dim N = _range.getTotalSize();                                          \
-            if(!VECTORIALIZATION || !isAlignable() || in->toAlignment() != toAlignment()) {    \
-                LINEAR_SEQUENTIAL_OP( OP, N, in->_data[in->_index++] );                        \
-            }                                                                                  \
-            else {                                                                             \
-                /* Vectorialized binary solution. */                                           \
-                COMPUTE_OP_BINARY_VECTORIALIZED( BINARY_OP, OP, V, type_suffix, op_suffix );   \
-            }                                                                                  \
-        }                                                                                      \
+#define COMPUTE_OP_MULTI( OP, VECT_OP, BINARY_OP )                                                   \
+    loadIndex();                                                                                     \
+    Function<MemoryView,T>* fun = in->_fun;                                                          \
+    if(fun != NULL) {                                                                                \
+        fun->init();                                                                                 \
+        if(!isSubBlock() || !fun->allSubBlocks()) {                                                  \
+	        /* Not linear sequential. */                                                             \
+            NON_LINEAR_SEQUENTIAL_OP( fun->apply( j ), OP, fun->update<0>( _size-i ) );              \
+        }                                                                                            \
+        else{                                                                                        \
+            /* Get the total size of the section. */                                                 \
+            const size_dim N = _range.getTotalSize();                                                \
+            if(!VECTORIALIZATION || !isAlignable() || !fun->allAlignable( toAlignment() )) {         \
+                LINEAR_SEQUENTIAL_OP( OP, N, fun->apply( i ) );                                      \
+            }                                                                                        \
+            else {                                                                                   \
+		        /* Vectorialized solution. */                                                        \
+                COMPUTE_OP_VECTORIALIZED( VECT_OP, fun->apply( i ), OP, (fun->update( 1, block )) ); \
+            }                                                                                        \
+        }                                                                                            \
+    }                                                                                                \
+    else {                                                                                           \
+        in->loadIndex();                                                                             \
+        if(!isSubBlock() || !in->isSubBlock()) {                                                     \
+            NON_LINEAR_SEQUENTIAL_OP( in->_data[in->_index+j], OP, in->update<0>( _size-i ) );       \
+        }                                                                                            \
+        else {                                                                                       \
+            /* Get the total size of the section. */                                                 \
+            const size_dim N = _range.getTotalSize();                                                \
+            if(!VECTORIALIZATION || !isAlignable() || in->toAlignment() != toAlignment()) {          \
+                LINEAR_SEQUENTIAL_OP( OP, N, in->_data[in->_index++] );                              \
+            }                                                                                        \
+            else {                                                                                   \
+                /* Vectorialized binary solution. */                                                 \
+                COMPUTE_OP_BINARY_VECTORIALIZED( BINARY_OP, OP );                                    \
+            }                                                                                        \
+        }                                                                                            \
     }
-
 
 
 // Operation used when an involved element is a number.
-#define COMPUTE_OP_CONST( OP, VECT_OP, V, type_suffix, op_suffix )                           \
-    loadIndex();                                                                             \
-    if(!isSubBlock()) {                                                                      \
-        NON_LINEAR_SEQUENTIAL_OP( value, OP,  );                                             \
-    }                                                                                        \
-    else {                                                                                   \
-        /* Get the total size of the section. */                                             \
-        const size_dim N = _range.getTotalSize();                                            \
-        if(!VECTORIALIZATION || !isAlignable()) {                                            \
-            LINEAR_SEQUENTIAL_OP( OP, N, value );                                            \
-        }                                                                                    \
-        else {                                                                               \
-            /* Vectorialized solution. */                                                    \
-            COMPUTE_OP_CONST_VECTORIALIZED( VECT_OP, value, OP, V, type_suffix, op_suffix ); \
-        }                                                                                    \
+#define COMPUTE_OP_CONST( OP, VECT_OP )                            \
+    loadIndex();                                                   \
+    if(!isSubBlock()) {                                            \
+        NON_LINEAR_SEQUENTIAL_OP( value, OP,  );                   \
+    }                                                              \
+    else {                                                         \
+        /* Get the total size of the section. */                   \
+        const size_dim N = _range.getTotalSize();                  \
+        if(!VECTORIALIZATION || !isAlignable()) {                  \
+            LINEAR_SEQUENTIAL_OP( OP, N, value );                  \
+        }                                                          \
+        else {                                                     \
+            /* Vectorialized solution. */                          \
+            COMPUTE_OP_CONST_VECTORIALIZED( VECT_OP, value, OP );  \
+        }                                                          \
     }
 
-// MM_TYPE must be one among: 'i', 'f' and 'd'.
-#define FUN_CALL_POINTER( OBJ, MM_TYPE ) OBJ->apply_vect_ ## MM_TYPE()
-#define FUN_CALL( OBJ, MM_TYPE ) OBJ.apply_vect_ ## MM_TYPE()
+
 
 
 template<class M, typename T>
@@ -175,9 +167,7 @@ class Function
         M* _m1 = NULL; M* _m2 = NULL;
         T (*_f)( T, T );
     #ifndef NO_VECTORIALIZATION
-        MM_VECT()  (*_vf_f)( MM_VECT(),  MM_VECT()  );
-        MM_VECT(d) (*_vf_d)( MM_VECT(d), MM_VECT(d) );
-        MM_VECT(i) (*_vf_i)( MM_VECT(i), MM_VECT(i) );
+        MM_VECT (*_vf)( MM_VECT, MM_VECT );
     #endif
     private:
         Function<M,T>* _next = NULL;
@@ -185,35 +175,24 @@ class Function
         
     #ifndef NO_VECTORIALIZATION
         // Vectors used for the constant number Functions.
-        MM_VECT()  _c_vect_f ALIGN;
-        MM_VECT(i) _c_vect_i ALIGN;
-        MM_VECT(d) _c_vect_d ALIGN;
+        MM_VECT _c_vect ALIGN;
     #endif
     
     
     public:
-        static inline T sum( T a, T b ) { return a+b; }
+        static INLINE T sum( T a, T b ) { return a+b; }
     #ifndef NO_VECTORIALIZATION
-        //FIXME non esiste MM_ADD(i).
-        //static inline MM_VECT(i) v_sum_i( MM_VECT(i) a, MM_VECT(i) b ){ return MM_ADD(i)( a, b ); }
-        static inline MM_VECT()  v_sum_f( MM_VECT()  a, MM_VECT()  b ){ return MM_ADD(s)( a, b ); }
-        static inline MM_VECT(d) v_sum_d( MM_VECT(d) a, MM_VECT(d) b ){ return MM_ADD(d)( a, b ); }
+        static INLINE MM_VECT v_sum( MM_VECT a, MM_VECT b ){ return MM_ADD( a, b ); }
     #endif
 
-        static inline T sub( T a, T b ) { return a-b; }
+        static INLINE T sub( T a, T b ) { return a-b; }
     #ifndef NO_VECTORIALIZATION
-        //FIXME non esiste MM_SUB(i).
-        //static inline MM_VECT(i) v_sub_i( MM_VECT(i) a, MM_VECT(i) b ){ return MM_SUB(i)( a, b ); }
-        static inline MM_VECT()  v_sub_f( MM_VECT()  a, MM_VECT()  b ){ return MM_SUB(s)( a, b ); }
-        static inline MM_VECT(d) v_sub_d( MM_VECT(d) a, MM_VECT(d) b ){ return MM_SUB(d)( a, b ); }
+        static INLINE MM_VECT v_sub( MM_VECT a, MM_VECT b ){ return MM_SUB( a, b ); }
     #endif
 
-        static inline T mul( T a, T b ) { return a*b; }
+        static INLINE T mul( T a, T b ) { return a*b; }
     #ifndef NO_VECTORIALIZATION
-        //FIXME non esiste MM_MUL(i).
-        //static inline MM_VECT(i) v_mul_i( MM_VECT(i) a, MM_VECT(i) b ){ return MM_MUL(i)( a, b ); }
-        static inline MM_VECT()  v_mul_f( MM_VECT()  a, MM_VECT()  b ){ return MM_MUL(s)( a, b ); }
-        static inline MM_VECT(d) v_mul_d( MM_VECT(d) a, MM_VECT(d) b ){ return MM_MUL(d)( a, b ); }
+        static INLINE MM_VECT v_mul( MM_VECT a, MM_VECT b ){ return MM_MUL( a, b ); }
     #endif
     
     public:
@@ -221,43 +200,17 @@ class Function
         { _m1 = m1; _m2 = m2; _f = f; _value = val; }
         
     #ifndef NO_VECTORIALIZATION
-        inline void addFunction_f( MM_VECT() (*vf)( MM_VECT(), MM_VECT() ) )
-        { _vf_f = vf; }
+        inline void addVectFunction( MM_VECT (*vf)( MM_VECT, MM_VECT ) )
+        { _vf = vf; }
         
-        inline void addFunction_d( MM_VECT(d) (*vf)( MM_VECT(d), MM_VECT(d) ) )
-        { _vf_d = vf; }
-        
-        inline void addFunction_i( MM_VECT(i) (*vf)( MM_VECT(i), MM_VECT(i) ) )
-        { _vf_i = vf; }
+        inline void addConstFunction( MM_VECT (*vf)( MM_VECT, MM_VECT ) )
+        {
+	        addVectFunction( vf );
+	        T _a_val[sizeof(T)] ALIGN;
+	        for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = _value;
+	        _c_vect = *((MM_VECT*) _a_val);
+        }
     #endif
-        
-        inline void addConstFunction_f( MM_VECT() (*vf)( MM_VECT(), MM_VECT() ) )
-        {
-        #ifndef NO_VECTORIALIZATION
-            addFunction_f( vf );
-            const T _val ALIGN = _value;
-            _c_vect_f = MM_SET1(s)( _val );
-        #endif
-        }
-        
-        inline void addConstFunction_d( MM_VECT(d) (*vf)( MM_VECT(d), MM_VECT(d) ) )
-        {
-        #ifndef NO_VECTORIALIZATION
-            addFunction_d( vf );
-            const T _val ALIGN = _value;
-            _c_vect_d = MM_SET1(d)( _val );
-        #endif
-        }
-        
-        //FIXME non esiste MM_SET1(i).
-        inline void addConstFunction_i( MM_VECT(i) (*vf)( MM_VECT(i), MM_VECT(i) ) )
-        {
-        #ifndef NO_VECTORIALIZATION
-            addFunction_i( vf );
-            //const T _val ALIGN = _value;
-            //_c_vect_d = MM_SET1(i)( _val );
-        #endif
-        }
         
         inline void addNext( Function<M,T>* fun  )
 		{ _next = fun; }
@@ -296,6 +249,15 @@ class Function
                    ((_next != NULL) ? _next->allAlignable( toAlign ) : true);
         }
         
+    #ifndef NO_VECTORIALIZATION
+        inline void loadVector()
+        {
+            _m1->loadVector();
+            if(_m2 != NULL) _m2->loadVector();
+            if(_next != NULL) _next->loadVector();
+        }
+    #endif
+        
         template<int dim, int offset>
         inline void update()
         {
@@ -328,37 +290,14 @@ class Function
                                          _m2->_data[_m2->_index + offset] );
             else return _f( _m1->_data[_m1->_index + offset], _next->apply( offset ) );
         }
-        
-        //inline T apply( const size_dim& offset )
-        //{ return _f( offset ); }
     
     #ifndef NO_VECTORIALIZATION
-        // TODO implementare..
-        /*inline MM_VECT(i) apply_vect_i()
+        inline MM_VECT apply_vect( const int& offset )
         {
-            if(next == NULL) return _vf_i( MM_LOAD(i)( (int*) (_m1->_data + _m1->_index) ),
-                                           (_m2 == NULL) ? c_vect_i :
-                                           MM_LOAD(i)( (float*) (_m2->_data + _m2->_index) ) );
-            else return _vf_i( MM_LOAD(i)( (int*) (_m1->_data + _m1->_index) ),
-                               next->apply_vect_i() );
-        }*/
-        
-        inline MM_VECT() apply_vect_f()
-        {
-            if(_next == NULL) return _vf_f( MM_LOAD(s)( (float*) (_m1->_data + _m1->_index) ),
-                                            (_m2 == NULL) ? _c_vect_f :
-                                            MM_LOAD(s)( (float*) (_m2->_data + _m2->_index) ) );
-            else return _vf_f( MM_LOAD(s)( (float*) (_m1->_data + _m1->getIndex()) ),
-                               _next->apply_vect_f() );
-        }
-        
-        inline MM_VECT(d) apply_vect_d()
-        {
-            if(_next == NULL) return _vf_d( MM_LOAD(d)( (double*) (_m1->_data + _m1->_index) ),
-                                            (_m2 == NULL) ? _c_vect_d :
-                                            MM_LOAD(d)( (double*) (_m2->_data + _m2->_index) ) );
-            else return _vf_d( MM_LOAD(d)( (double*) (_m1->_data + _m1->_index) ),
-                               _next->apply_vect_d() );
+            if(_next == NULL) return _vf( _m1->_x_vec[offset],
+                                          (_m2 == NULL) ? _c_vect :
+                                          _m2->_x_vec[offset] );
+            else return _vf( _m1->_x_vec[offset], _next->apply_vect( offset ) );
         }
     #endif
 };

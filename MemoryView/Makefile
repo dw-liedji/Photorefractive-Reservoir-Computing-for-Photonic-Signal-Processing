@@ -20,20 +20,29 @@ SRC=parallel_curl
 
 THREADS=2
 TEST_EXE=Test
-
-# Create the .so library.
-lib:
-	cython --cplus $(SRC).pyx
-	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(CFLAGS) $(SRC).cpp -o $(SRC).o
-	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(LFLAGS) $(SRC).o   -o $(SRC).so
-
 clean:
 	rm -f *.so *.o *~ $(TEST_EXE) $(SRC).cpp
 
-# Run the C++ test file.
-test:
-	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(FLAGS) $(TEST_EXE).cpp -o $(TEST_EXE)
+# Create the C++ .so library.
+lib: $(SRC).so
+
+$(SRC).so: $(SRC).o
+	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(LFLAGS) $(SRC).o -o $(SRC).so
+$(SRC).o: $(SRC).cpp
+	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(CFLAGS) $(SRC).cpp -o $(SRC).o
+$(SRC).cpp: $(SRC).pyx
+	cython --cplus $(SRC).pyx
+
+
+
+# Compile and run the C++ test file.
+test: $(TEST_EXE)
 	./$(TEST_EXE) $(THREADS)
+
+$(TEST_EXE): $(TEST_EXE).o
+	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(FLAGS) $(TEST_EXE).o -o $(TEST_EXE)
+$(TEST_EXE).o: $(TEST_EXE).cpp
+	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(FLAGS) -c $(TEST_EXE).cpp
 
 run:
 	make clean

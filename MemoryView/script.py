@@ -15,16 +15,13 @@ CO = 3   # #Columns.
 Q =  20  # Number of timesteps (3000??).
 # Threads.
 Np = multiprocessing.cpu_count()
+Np = 4
 
 # Courant Number.
 sc = 0.7
 
 Type = np.float32
 
-
-#############
-## METHODS ##
-#############
 
 def new_fields():
     np.random.seed(6)
@@ -49,8 +46,8 @@ if __name__ == '__main__':
     print "START PARALLEL.."
     
     for T in xrange( 1, Np+1 ):
-        t = time()
         for i in xrange(Q):
-            #curl_H( curl, sc, T )
-            curl_H_FF( E, H, D, curl, sc, T )
+            #t = time()
+            curl_H( E, H, D, curl, sc, T )
+            #curl_H_FF( E, H, D, curl, sc, T )
         print "Cpp_PAR:    ",time()-t, "Np = ",T

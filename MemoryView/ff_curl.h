@@ -58,7 +58,7 @@ namespace ff_curl_parallel
                         const bool last     = (idx == _Np-1);
                         const size_m _start = (idx == 0) ? 0 : ((idx * c) + offset);
                         const size_m _stop  = last ? CU : ((idx+1)*c + 1 + offset);
-
+                        
                         H->curl_E( E->slice( _start, _stop, 0, M, 0, R, 0, CO ),
                                    H->slice( _start, _stop, 0, M, 0, R, 0, CO ),
                                    D->slice( _start, _stop, 0, M, 0, R, 0, CO ),
@@ -81,7 +81,10 @@ namespace ff_curl_parallel
                         const bool first    = (idx == 0);
                         const size_m _start = (first) ? 0 : ((idx * c) - 1 + offset);
                         const size_m _stop  = (idx == _Np-1) ? CU : ((idx+1)*c + offset);
-
+                        
+                        //printf( "ID: %d, CORE, %ld\n", idx, ff_getMyCore() );
+                        //printf( "START: %d, STOP, %d\n", _start, _stop );
+                        
                         H->curl_H( H->slice( _start, _stop, 0, M, 0, R, 0, CO ),
                                    E->slice( _start, _stop, 0, M, 0, R, 0, CO ),
                                    D->slice( _start, _stop, 0, M, 0, R, 0, CO ),
