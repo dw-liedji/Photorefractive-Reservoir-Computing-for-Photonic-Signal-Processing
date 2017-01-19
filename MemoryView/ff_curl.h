@@ -82,9 +82,6 @@ namespace ff_curl_parallel
                         const size_m _start = (first) ? 0 : ((idx * c) - 1 + offset);
                         const size_m _stop  = (idx == _Np-1) ? CU : ((idx+1)*c + offset);
                         
-                        //printf( "ID: %d, CORE, %ld\n", idx, ff_getMyCore() );
-                        //printf( "START: %d, STOP, %d\n", _start, _stop );
-                        
                         H->curl_H( H->slice( _start, _stop, 0, M, 0, R, 0, CO ),
                                    E->slice( _start, _stop, 0, M, 0, R, 0, CO ),
                                    D->slice( _start, _stop, 0, M, 0, R, 0, CO ),
