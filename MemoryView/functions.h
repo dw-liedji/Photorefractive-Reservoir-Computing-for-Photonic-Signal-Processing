@@ -56,36 +56,36 @@
             _data[_index++] OP R_VALUE;         \
         UPDATE;
     
-	#define COMPUTE_OP_VECTORIALIZED( VECT_OP, R_VALUE, OP, UPDATE ) \
+    #define COMPUTE_OP_VECTORIALIZED( VECT_OP, R_VALUE, OP, UPDATE ) \
         ALIGNMENT( OP, R_VALUE, (fun->update( 1, i )) )              \
                                                                      \
-		const size_dim n    = (N - toAlign) / block;                 \
-		const size_dim rest = (N - toAlign) % block;                 \
-		loadVector();                                                \
-		fun->loadVector();                                           \
-		for(i = 0; i < n; i++) {                                     \
-			_x_vec[i] = VECT_OP;                                     \
-			UPDATE;                                                  \
-		}                                                            \
+        const size_dim n    = (N - toAlign) / block;                 \
+        const size_dim rest = (N - toAlign) % block;                 \
+        loadVector();                                                \
+        fun->loadVector();                                           \
+        for(i = 0; i < n; i++) {                                     \
+            _x_vec[i] = VECT_OP;                                     \
+            UPDATE;                                                  \
+        }                                                            \
                                                                      \
-		LINEAR_SEQUENTIAL_OP( OP, rest, R_VALUE );
+        LINEAR_SEQUENTIAL_OP( OP, rest, R_VALUE );
 	
-	#define COMPUTE_OP_CONST_VECTORIALIZED( VECT_OP, R_VALUE, OP ) \
-	    ALIGNMENT( OP, R_VALUE,  )                                 \
-		                                                           \
-		const size_dim n    = (N - toAlign) / block;               \
-		const size_dim rest = (N - toAlign) % block;               \
-		_x_vec = (MM_VECT*) (_data + _index);                      \
-		T _a_val[sizeof(T)] ALIGN;                                 \
+    #define COMPUTE_OP_CONST_VECTORIALIZED( VECT_OP, R_VALUE, OP ) \
+        ALIGNMENT( OP, R_VALUE,  )                                 \
+                                                                   \
+        const size_dim n    = (N - toAlign) / block;               \
+        const size_dim rest = (N - toAlign) % block;               \
+        _x_vec = (MM_VECT*) (_data + _index);                      \
+        T _a_val[sizeof(T)] ALIGN;                                 \
         for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = value; \
         MM_VECT x_c_vec = ((MM_VECT*) _a_val)[0];                  \
-		for(i = 0; i < n; i++, _index += block)                    \
-			_x_vec[i] = VECT_OP;                                   \
+        for(i = 0; i < n; i++, _index += block)                    \
+            _x_vec[i] = VECT_OP;                                   \
                                                                    \
-		LINEAR_SEQUENTIAL_OP( OP, rest, R_VALUE );
+        LINEAR_SEQUENTIAL_OP( OP, rest, R_VALUE );
     
-	#define COMPUTE_OP_BINARY_VECTORIALIZED( VECT_OP, OP )         \
-	    ALIGNMENT( OP, in->_data[in->_index++],  )                 \
+    #define COMPUTE_OP_BINARY_VECTORIALIZED( VECT_OP, OP )         \
+        ALIGNMENT( OP, in->_data[in->_index++],  )                 \
 		                                                           \
 		const size_dim n    = (N - toAlign) / block;               \
 		const size_dim rest = (N - toAlign) % block;               \
@@ -105,7 +105,7 @@
     if(fun != NULL) {                                                                                \
         fun->init();                                                                                 \
         if(!isSubBlock() || !fun->allSubBlocks()) {                                                  \
-	        /* Not linear sequential. */                                                             \
+            /* Not linear sequential. */                                                             \
             NON_LINEAR_SEQUENTIAL_OP( fun->apply( j ), OP, fun->update<0>( _size-i ) );              \
         }                                                                                            \
         else{                                                                                        \
@@ -115,7 +115,7 @@
                 LINEAR_SEQUENTIAL_OP( OP, N, fun->apply( i ) );                                      \
             }                                                                                        \
             else {                                                                                   \
-		        /* Vectorialized solution. */                                                        \
+                /* Vectorialized solution. */                                                        \
                 COMPUTE_OP_VECTORIALIZED( VECT_OP, fun->apply( i ), OP, (fun->update( 1, block )) ); \
             }                                                                                        \
         }                                                                                            \
@@ -174,7 +174,6 @@ class Function
         T _value = -1;
         
     #ifndef NO_VECTORIALIZATION
-        // Vectors used for the constant number Functions.
         MM_VECT _c_vect ALIGN;
     #endif
     
@@ -212,8 +211,8 @@ class Function
         }
     #endif
         
-        inline void addNext( Function<M,T>* fun  )
-		{ _next = fun; }
+        inline void addNext( Function<M,T>* fun )
+        { _next = fun; }
         
         
         
