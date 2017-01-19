@@ -86,15 +86,15 @@
     
     #define COMPUTE_OP_BINARY_VECTORIALIZED( VECT_OP, OP )         \
         ALIGNMENT( OP, in->_data[in->_index++],  )                 \
-		                                                           \
-		const size_dim n    = (N - toAlign) / block;               \
-		const size_dim rest = (N - toAlign) % block;               \
-		fun->loadVector();                                         \
-		size_dim inIndex = in->_index;                             \
-		for(i = 0; i < n; i++, _index += block, inIndex += block)  \
-			_x_vec[i] = VECT_OP;                                   \
                                                                    \
-		LINEAR_SEQUENTIAL_OP( OP, rest, in->_data[in->_index++] );
+        const size_dim n    = (N - toAlign) / block;               \
+        const size_dim rest = (N - toAlign) % block;               \
+        fun->loadVector();                                         \
+        size_dim inIndex = in->_index;                             \
+        for(i = 0; i < n; i++, _index += block, inIndex += block)  \
+            _x_vec[i] = VECT_OP;                                   \
+                                                                   \
+        LINEAR_SEQUENTIAL_OP( OP, rest, in->_data[in->_index++] );
 #endif
 
 
