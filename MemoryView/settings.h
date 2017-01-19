@@ -42,7 +42,7 @@ typedef int64_t size_m;
     #define MM_ADD      _mm512_add_pd
     #define MM_SUB      _mm512_sub_pd
     #define MM_MUL      _mm512_mul_pd
-	#define MM_DIV      _mm512_div_pd
+    #define MM_DIV      _mm512_div_pd
     #define MM_SET1     _mm512_set1_pd
 #elif defined( __AVX__ ) || defined( __AVX2__ )
     #include <immintrin.h>
@@ -53,7 +53,7 @@ typedef int64_t size_m;
     #define MM_ADD      _mm256_add_pd
     #define MM_SUB      _mm256_sub_pd
     #define MM_MUL      _mm256_mul_pd
-	#define MM_DIV      _mm256_div_pd
+    #define MM_DIV      _mm256_div_pd
     #define MM_SET1     _mm256_set1_pd
 #elif defined( __SSE__ ) || defined( __SSE2__ ) || defined( __SSE3__ ) || defined( __SSE4__ )
     #include <xmmintrin.h>
@@ -64,7 +64,7 @@ typedef int64_t size_m;
     #define MM_ADD      _mm_add_pd
     #define MM_SUB      _mm_sub_pd
     #define MM_MUL      _mm_mul_pd
-	#define MM_DIV      _mm_div_pd
+    #define MM_DIV      _mm_div_pd
     #define MM_SET1     _mm_set1_pd
 #else
 	#define BLOCK       sizeof( T )
