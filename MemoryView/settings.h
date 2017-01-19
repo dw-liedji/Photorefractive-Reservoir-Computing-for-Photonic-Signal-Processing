@@ -67,7 +67,7 @@ typedef int64_t size_m;
     #define MM_DIV      _mm_div_pd
     #define MM_SET1     _mm_set1_pd
 #else
-	#define BLOCK       sizeof( T )
+    #define BLOCK       sizeof( T )
     #define NO_VECTORIALIZATION
 #endif
 
