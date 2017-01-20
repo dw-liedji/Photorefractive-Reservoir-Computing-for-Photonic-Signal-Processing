@@ -63,7 +63,7 @@
         const size_dim rest = (N - toAlign) % block;                 \
         loadVector();                                                \
         fun->loadVector();                                           \
-        for(i = 0; i < n; i++) {                                     \
+        for(i = 0; i < n; i++, _index += block) {                    \
             _x_vec[i] = VECT_OP;                                     \
             UPDATE;                                                  \
         }                                                            \
@@ -89,6 +89,7 @@
                                                                    \
         const size_dim n    = (N - toAlign) / block;               \
         const size_dim rest = (N - toAlign) % block;               \
+        loadVector();                                              \
         fun->loadVector();                                         \
         size_dim inIndex = in->_index;                             \
         for(i = 0; i < n; i++, _index += block, inIndex += block)  \
