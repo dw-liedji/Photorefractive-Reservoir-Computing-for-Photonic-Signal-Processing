@@ -57,15 +57,15 @@ class Range
             }
             
             size_dim offset = 0, in_offset = 0;
-			for(size_dim i = 0; i < _size; i++) {
-				if(shape(i+offset) == 1) { offset++; continue; }
-				if(in.shape(i+in_offset) == 1) { in_offset++; continue; }
-				if(shape(i + offset) != in.shape(i + in_offset)) {
-					printf( "[%s, Line: %d] Different input shapes: (", fun, line ); printSize();
-					printf( ") and (" ); in.printSize(); printf( ")\n" );
-					throw;
-				}
-			}
+            for(size_dim i = 0; i < _size; i++) {
+                if(shape(i+offset) == 1) { offset++; continue; }
+                if(in.shape(i+in_offset) == 1) { in_offset++; continue; }
+                if(shape(i + offset) != in.shape(i + in_offset)) {
+                    printf( "[%s, Line: %d] Different input shapes: (", fun, line ); printSize();
+                    printf( ") and (" ); in.printSize(); printf( ")\n" );
+                    throw;
+                }
+            }
         }
         
         INLINE bool isSliced()
