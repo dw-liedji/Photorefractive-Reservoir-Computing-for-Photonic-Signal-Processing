@@ -11,6 +11,7 @@
 
 #include <typeinfo>
 
+#include "range.h"
 #include "settings.h"
 
 
@@ -169,7 +170,7 @@ namespace functors
             Function* _next = NULL;
             
         #ifndef NO_VECTORIALIZATION
-            // Vectors used for the constant number Functions.
+            // Vectors used for constant functions.
             MM_VECT()  _c_vect_s ALIGN;
             MM_VECT(i) _c_vect_i ALIGN;
             MM_VECT(d) _c_vect_d ALIGN;
@@ -181,6 +182,9 @@ namespace functors
         public:
     		inline void init()
             {  _m->loadIndex(); _next->init(); }
+
+    		inline Range getRange()
+            { return _m->getRange(); }
             
             inline bool allSubBlocks()
             { return _m->isSubBlock() && _next->allSubBlocks(); }
@@ -229,6 +233,7 @@ namespace functors
             { _m1 = m1; _m2 = m2; }
             
             inline void init() { _m1->loadIndex(); _m2->loadIndex(); }
+            inline Range getRange() { return _m1->getRange(); }
             inline bool allSubBlocks()
             { return _m1->isSubBlock() && _m2->isSubBlock(); }
             /** Returns the alignment of each vector involved in the function. */
@@ -281,6 +286,7 @@ namespace functors
             { _m = m; _value = val; }
             
             inline void init() { _m->loadIndex(); }
+            inline Range getRange() { return _m->getRange(); }
             inline bool allSubBlocks()
             { return _m->isSubBlock(); }
             /** Returns the alignment of each vector involved in the function. */

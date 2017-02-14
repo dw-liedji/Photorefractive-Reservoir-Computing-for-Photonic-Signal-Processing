@@ -153,6 +153,9 @@ namespace algebra
                 return _tmp;
             }
             
+            inline Range getRange()
+            { return _range; }
+
             inline T get( const std::vector<size_dim> positions )
             {
                 size_dim i = 0, _pos = 0;
@@ -504,7 +507,7 @@ namespace algebra
             {
                 MemoryView<T> ret( IN->getDimensions() );
 	            if(first) {
-	                // X-component.
+                    // X-component.
 	                *(ret[":,1:,:,0"]) += (*(IN[0][":,1:,:,2"]) - IN[0][":,:-1,:,2"]);
 	                *(ret[":,0 ,:,0"]) +=    IN[0][":,0 ,:,2"];
 	                *(ret[":,:,1:,0"]) -= (*(IN[0][":,:,1:,1"]) - IN[0][":,:,:-1,1"]);
@@ -545,7 +548,7 @@ namespace algebra
 	                *(curl[0]["1:"]) = ret["1:,:,1,:"];
 	                *(OUT[0]["1:"]) += *ret["1:"] * (*D[0]["1:"] * sc);
                 }
-	        }
+            }
             
             void curl_E( MemoryView<T>* IN, MemoryView<T>* OUT, MemoryView<T>* D, MemoryView<T>* curl, const T sc, const bool last )
             {
@@ -606,7 +609,6 @@ namespace algebra
             void print_out()
             {
                 printSize();
-                
                 printf( "[" );
                 printDimension( 0, std::vector<size_dim>( _size ) );
                 printf( "]\n" );
@@ -649,7 +651,8 @@ namespace algebra
             }
         
         public:
-            ~MemoryView(){ if(_data != NULL) free( _data ); }
+            ~MemoryView()
+            { if(_data != NULL) free( _data ); }
     };
 }
 

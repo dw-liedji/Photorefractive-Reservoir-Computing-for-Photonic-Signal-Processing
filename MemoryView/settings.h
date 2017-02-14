@@ -26,10 +26,10 @@ typedef int64_t size_m;
 #define _MAX(a,b) (((a) > (b)) ? (a) : (b))
 
 // Check the size of the actual type.
-#define IS_DOUBLE( T ) sizeof(T) == 8
-#define IS_FLOAT( T )  sizeof(T) == 4
-#define IS_SHORT( T )  sizeof(T) == 2
-#define IS_CHAR( T )   sizeof(T) == 1
+#define IS_DOUBLE( T ) sizeof(T) == sizeof( double )
+#define IS_FLOAT( T )  sizeof(T) == sizeof( float )
+#define IS_SHORT( T )  sizeof(T) == sizeof( short )
+#define IS_CHAR( T )   sizeof(T) == sizeof( char )
 
 // The vector pointer of the matrix.
 #define L_VECT( suffix ) _x_vec_ ## suffix
