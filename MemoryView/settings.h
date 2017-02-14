@@ -36,10 +36,6 @@ typedef int64_t size_m;
 // The vector pointer of the matrix.
 #define L_VECT( suffix ) _x_vec_ ## suffix
 
-#ifndef INLINE
-    #define INLINE __attribute__((always_inline))
-#endif
-
 // Used to include all the possible vectorialized operations.
 //#include <x86intrin.h>
 
@@ -58,21 +54,29 @@ typedef int64_t size_m;
     #define MM_ADDd()     _mm512_add_pd
     
     #define MM_SUB(prefix,bits) MM_SUB ## prefix(bits)
-    #define MM_SUBi(bits) _mm512_add_epi ## bits
+    #define MM_SUBi(bits) _mm512_sub_epi ## bits
     #define MM_SUBs()     _mm512_sub_ps
     #define MM_SUBd()     _mm512_sub_pd
     
     #define MM_MUL(prefix,bits) MM_MUL ## prefix(bits)
-    #define MM_MULi(bits) _mm512_mullo_epi ## bits
+    #define MM_MULi(bits) _mm_mul_pi ## bits /* Call the 8 or 16-bits vector function. */
     #define MM_MULs()     _mm512_mul_ps
     #define MM_MULd()     _mm512_mul_pd
+    #define MM_MUL_LO     _mm512_mullo_epi16
+    #define MM_MUL_HI     _mm512_mulhi_epi16
+    
+    #define MM_SR_LI  _mm512_srli_epi16
+    #define MM_SL_LI  _mm512_slli_epi16
+    #define MM_AND_SI _mm512_and_si512
+    #define MM_OR_SI  _mm512_or_si512
     
 	#define MM_DIV(suffix) _mm512_div_p ## suffix
 	
-    #define MM_SET1(prefix,bits) MM_SET1 ## prefix
+    #define MM_SET1(prefix,bits) MM_SET1 ## prefix(bits)
     #define MM_SET1i(bits) _mm512_set1_epi ## bits
     #define MM_SET1s()     _mm512_set1_ps
     #define MM_SET1d()     _mm512_set1_pd
+    
 #elif defined( __AVX__ ) || defined( __AVX2__ )
     #include <immintrin.h>
     #define BLOCK               32
@@ -80,25 +84,33 @@ typedef int64_t size_m;
     
     #define MM_ADD(prefix,bits) MM_ADD ## prefix(bits)
     #define MM_ADDi(bits) _mm256_add_epi ## bits
-    #define MM_ADDs()      _mm256_add_ps
-    #define MM_ADDd()      _mm256_add_pd
+    #define MM_ADDs()     _mm256_add_ps
+    #define MM_ADDd()     _mm256_add_pd
     
     #define MM_SUB(prefix,bits) MM_SUB ## prefix(bits)
-    #define MM_SUBi(bits) _mm256_add_epi ## bits
+    #define MM_SUBi(bits) _mm256_sub_epi ## bits
     #define MM_SUBs()     _mm256_sub_ps
     #define MM_SUBd()     _mm256_sub_pd
     
     #define MM_MUL(prefix,bits) MM_MUL ## prefix(bits)
-    #define MM_MULi(bits) _mm256_mullo_epi ## bits
+    #define MM_MULi(bits) _mm_mul_pi ## bits /* Call the 8 or 16-bits vector function. */
     #define MM_MULs()     _mm256_mul_ps
     #define MM_MULd()     _mm256_mul_pd
+    #define MM_MUL_LO     _mm256_mullo_epi16
+    #define MM_MUL_HI     _mm256_mulhi_epi16
+    
+    #define MM_SR_LI  _mm256_srli_epi16
+    #define MM_SL_LI  _mm256_slli_epi16
+    #define MM_AND_SI _mm256_and_si256
+    #define MM_OR_SI  _mm256_or_si256
     
 	#define MM_DIV(suffix) _mm256_div_p ## suffix
 	
-    #define MM_SET1(prefix,bits) MM_SET1 ## prefix
+    #define MM_SET1(prefix,bits) MM_SET1 ## prefix(bits)
     #define MM_SET1i(bits) _mm256_set1_epi ## bits
     #define MM_SET1s()     _mm256_set1_ps
     #define MM_SET1d()     _mm256_set1_pd
+    
 #elif defined( __SSE__ ) || defined( __SSE2__ ) || defined( __SSE3__ ) || defined( __SSE4__ )
     #include <xmmintrin.h>
     #define BLOCK               16
@@ -115,16 +127,24 @@ typedef int64_t size_m;
     #define MM_SUBd()     _mm_sub_pd
     
     #define MM_MUL(prefix,bits) MM_MUL ## prefix(bits)
-    #define MM_MULi(bits) _mm_mullo_epi ## bits
+    #define MM_MULi(bits) _mm_mul_pi ## bits /* Call the 8 or 16-bits vector function. */
     #define MM_MULs()     _mm_mul_ps
     #define MM_MULd()     _mm_mul_pd
+    #define MM_MUL_LO     _mm_mullo_epi16
+    #define MM_MUL_HI     _mm_mulhi_epi16
+    
+    #define MM_SR_LI  _mm_srli_epi16
+    #define MM_SL_LI  _mm_slli_epi16
+    #define MM_AND_SI _mm_and_si128
+    #define MM_OR_SI  _mm_or_si128
     
 	#define MM_DIV(suffix) _mm_div_p ## suffix
 	
-    #define MM_SET1(prefix,bits) MM_SET1 ## prefix
+    #define MM_SET1(prefix,bits) MM_SET1 ## prefix(bits)
     #define MM_SET1i(bits) _mm_set1_epi ## bits
     #define MM_SET1s()     _mm_set1_ps
     #define MM_SET1d()     _mm_set1_pd
+    
 #else
 	#define BLOCK               sizeof( T )
     #define MM_VECT(suffix)     T

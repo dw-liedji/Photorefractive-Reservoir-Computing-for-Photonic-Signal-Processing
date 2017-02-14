@@ -73,7 +73,7 @@ int main( int argc, char* argv[] )
     MemoryView<V>* H = new MemoryView<V>( { CU, M, R, CO } ); *H = 2;
     MemoryView<V>* E = new MemoryView<V>( { CU, M, R, CO } ); *E = 5;
     MemoryView<V>* D = new MemoryView<V>( { CU, M, R, CO } ); *D = 4;
-    MemoryView<V>* curl = new MemoryView<V>( { CU, M, 1, CO } );
+    MemoryView<V>* C = new MemoryView<V>( { CU, M, CO } );
     
     const int Q = 1;
     const int Np = stoll( argv[1] );
@@ -84,9 +84,9 @@ int main( int argc, char* argv[] )
         std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
         for(int i = 0; i < Q; i++) {
             #ifdef _OPENMP
-            curl_E_OPENMP( n, H, E, D, curl, CU, M, R, CO );
+            curl_E_OPENMP( n, H, E, D, C, CU, M, R, CO );
             #else
-            H->curl_E( H, E, D, curl, sc, true );
+            H->curl_E( H, E, D, C, sc, true );
             #endif /* _OPENMP */
         } 
         std::chrono::duration<double> elapsed_seconds = std::chrono::system_clock::now()-start;
@@ -96,7 +96,7 @@ int main( int argc, char* argv[] )
     delete H;
     delete E;
     delete D;
-    delete curl;
+    delete C;
     
     return 0;
 }

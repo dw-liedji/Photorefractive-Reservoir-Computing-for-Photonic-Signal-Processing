@@ -191,7 +191,7 @@ namespace algebra
             }
             
         #ifndef NO_VECTORIALIZATION
-            INLINE void loadVector()
+            MV_INLINE void loadVector()
             {
                 if(IS_DOUBLE( T )) _x_vec_d = (MM_VECT(d)*) (_data + _index);
                 else if(IS_FLOAT( T )) _x_vec_s = (MM_VECT()*) (_data + _index);
@@ -308,10 +308,10 @@ namespace algebra
             {
                 _range.checkSize( "operator*=", __LINE__, in->_range );
                 
-                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( *=, MM_MULs()( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
-                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( *=, MM_MULd()( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
-                // TODO completare anche per short e char..
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_BINARY( *=, MM_MUL( s )( x_vec, FUN_CALL_POINTER( fun, i ) ), MM_MUL( s )( x_vec1, x_vec2 ), i, i ); }
+                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( *=, MM_MUL(s,)( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( *=, MM_MUL(d,)( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
+                else if(IS_SHORT(T)) {    COMPUTE_OP_BINARY( *=, MM_MUL(i,16)( L_VECT(i)[i], in->L_VECT(i)[i] ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_BINARY( *=, MM_MUL(i,8)( L_VECT(i)[i], in->L_VECT(i)[i] ), i, i ); }
                 
                 return this;
             }
@@ -321,11 +321,10 @@ namespace algebra
             {
                 _range.checkSize( "operator*=", __LINE__, fun->getRange() );
                 
-                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( *=, MM_MULs()( L_VECT(s)[i], fun->apply_vect_f( i ) ),  , s ); }
-                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( *=, MM_MULd()( L_VECT(d)[i], fun->apply_vect_d( i ) ), d, d ); }
-                // TODO completare anche per short e char..
-                //else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( *=, MM_MUL(i,16)( L_VECT(i)[i], in->apply_vect_i16( i ) ), i, i ); }
-                //else if(IS_CHAR(T)) {    COMPUTE_OP_MULTI( *=, MM_MUL(i,8)( L_VECT(i)[i], in->apply_vect_i8( i ) ), i, i ); }
+                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( *=, MM_MUL(s,)( L_VECT(s)[i], fun->apply_vect_f( i ) ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( *=, MM_MUL(d,)( L_VECT(d)[i], fun->apply_vect_d( i ) ), d, d ); }
+                else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( *=, MM_MUL(i,16)( L_VECT(i)[i], fun->apply_vect_i_16( i ) ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_MULTI( *=, MM_MUL(i,8)( L_VECT(i)[i], fun->apply_vect_i_8( i ) ), i, i ); }
                 
                 return this;
             }
@@ -334,9 +333,10 @@ namespace algebra
             {
                 const T value ALIGN = val;
                 
-                if(IS_FLOAT( T )) {       COMPUTE_OP_CONST( *=, MM_MULs()( L_VECT(s)[i], x_c_vec ),  , s ); }
-                else if(IS_DOUBLE( T )) { COMPUTE_OP_CONST( *=, MM_MULd()( L_VECT(d)[i], x_c_vec ), d, d ); }
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_CONST( *=, MM_MUL(i,8)( x_vec1, x_vec2 ), i, i ); }
+                if(IS_FLOAT( T )) {       COMPUTE_OP_CONST( *=, MM_MUL(s,)( L_VECT(s)[i], x_c_vec ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_CONST( *=, MM_MUL(d,)( L_VECT(d)[i], x_c_vec ), d, d ); }
+                else if(IS_SHORT(T)) {    COMPUTE_OP_CONST( *=, MM_MUL(i,16)( L_VECT(i)[i], x_c_vec ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_CONST( *=, MM_MUL(i,8)( L_VECT(i)[i], x_c_vec ), i, i ); }
                 
                 return this;
             }
@@ -350,7 +350,7 @@ namespace algebra
                 else {
                     if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( =, in->L_VECT(s)[i],  , s ); }
                     else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( =, in->L_VECT(d)[i], d, d ); }
-                    //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_MULTI( =, x_vec1 = x_vec2, i, i ); }
+                    else { /*Short and Char*/ COMPUTE_OP_BINARY( =, in->L_VECT(i)[i], i, i ); }
                 }
                 
                 return this;
@@ -363,9 +363,8 @@ namespace algebra
                 
                 if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( =, fun->apply_vect_f( i ),  , s ); }
                 else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( =, fun->apply_vect_d( i ), d, d ); }
-                // TODO completare anche per short e char..
-                //else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( =, fun->apply_vect_i16( i ), i, i ); }
-                //else if(IS_CHAR(T)) {    COMPUTE_OP_MULTI( =, fun->apply_vect_i8( i ), i, i ); }
+                else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( =, fun->apply_vect_i_16( i ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_MULTI( =, fun->apply_vect_i_8( i ), i, i ); }
                 
                 return this;
             }
@@ -376,7 +375,7 @@ namespace algebra
                 
                 if(IS_FLOAT( T )) {       COMPUTE_OP_CONST( =, x_c_vec,  , s ); }
                 else if(IS_DOUBLE( T )) { COMPUTE_OP_CONST( =, x_c_vec, d, d ); }
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_CONST( *=, x_c_vec, i, i ); }
+                else { /*Short and Char*/ COMPUTE_OP_CONST( =, x_c_vec, i, i ); }
                 
                 return this;
             }
@@ -384,9 +383,10 @@ namespace algebra
             inline MemoryView<T>* operator+=( MemoryView<T>* in )
             { 
                 _range.checkSize( "operator+=", __LINE__, in->_range );
-                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( +=, MM_ADD(s,)( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
-                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( +=, MM_ADD(d,)( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_BINARY( +=, MM_ADD( s )( x_vec, FUN_CALL_POINTER( fun, i ) ), MM_ADD( s )( x_vec1, x_vec2 ), i, i ); }
+                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( +=, MM_ADD(s,  )( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( +=, MM_ADD(d,  )( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
+                else if(IS_SHORT(T)) {    COMPUTE_OP_BINARY( +=, MM_ADD(i,16)( L_VECT(i)[i], in->L_VECT(i)[i] ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_BINARY( +=, MM_ADD(i, 8)( L_VECT(i)[i], in->L_VECT(i)[i] ), i, i ); }
                 
                 return this;
             }
@@ -396,11 +396,10 @@ namespace algebra
             {
                 _range.checkSize( "operator*=", __LINE__, fun->getRange() );
                 
-                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( +=, MM_ADD(s,)( L_VECT(s)[i], fun->apply_vect_f(i) ),  , s ); }
-                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( +=, MM_ADD(d,)( L_VECT(d)[i], fun->apply_vect_d(i) ), d, d ); }
-                // TODO completare anche per short e char..
-                //else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( +=, MM_ADD(i,16)( L_VECT(i)[i], fun->apply_vect_i16( i ) ), i, i ); }
-                //else if(IS_CHAR(T)) {    COMPUTE_OP_MULTI( +=, MM_ADD(i,8)( L_VECT(i)[i], fun->apply_vect_i8( i ) ), i, i ); }
+                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( +=, MM_ADD(s,  )( L_VECT(s)[i], fun->apply_vect_f(i) ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( +=, MM_ADD(d,  )( L_VECT(d)[i], fun->apply_vect_d(i) ), d, d ); }
+                else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( +=, MM_ADD(i,16)( L_VECT(i)[i], fun->apply_vect_i_16( i ) ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_MULTI( +=, MM_ADD(i, 8)( L_VECT(i)[i], fun->apply_vect_i_8( i ) ), i, i ); }
                 
                 return this;
             }
@@ -408,9 +407,10 @@ namespace algebra
             inline MemoryView<T>* operator-=( MemoryView<T>* in )
             {
                 _range.checkSize( "operator-=", __LINE__, in->_range );
-                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( -=, MM_SUB(s,)( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
-                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( -=, MM_SUB(d,)( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
-                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_BINARY( -=, MM_SUB( s )( x_vec, FUN_CALL_POINTER( fun, i ) ), MM_SUB( s )( x_vec1, x_vec2 ), i, i ); }
+                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( -=, MM_SUB(s,  )( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( -=, MM_SUB(d,  )( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
+                else if(IS_SHORT(T)) {    COMPUTE_OP_BINARY( -=, MM_SUB(i,16)( L_VECT(i)[i], in->L_VECT(i)[i] ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_BINARY( -=, MM_SUB(i, 8)( L_VECT(i)[i], in->L_VECT(i)[i] ), i, i ); }
                 
                 return this;
             }
@@ -420,11 +420,10 @@ namespace algebra
             {
                 _range.checkSize( "operator*=", __LINE__, fun->getRange() );
                 
-                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( -=, MM_SUB(s,)( L_VECT(s)[i], fun->apply_vect_f(i) ),  , s ); }
-                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( -=, MM_SUB(d,)( L_VECT(d)[i], fun->apply_vect_d(i) ), d, d ); }
-                // TODO completare anche per short e char..
-                //else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( -=, MM_SUB(i,16)( L_VECT(i)[i], fun->apply_vect_i16( i ) ), i, i ); }
-                //else if(IS_CHAR(T)) {    COMPUTE_OP_MULTI( -=, MM_SUB(i,8)( L_VECT(i)[i], fun->apply_vect_i8( i ) ), i, i ); }
+                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( -=, MM_SUB(s,  )( L_VECT(s)[i], fun->apply_vect_f(i) ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( -=, MM_SUB(d,  )( L_VECT(d)[i], fun->apply_vect_d(i) ), d, d ); }
+                else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( -=, MM_SUB(i,16)( L_VECT(i)[i], fun->apply_vect_i_16( i ) ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_MULTI( -=, MM_SUB(i,8 )( L_VECT(i)[i], fun->apply_vect_i_8( i ) ), i, i ); }
                 
                 return this;
             }

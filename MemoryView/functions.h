@@ -163,6 +163,33 @@
 
 namespace functors
 {
+    /**
+    * Function used to compute 16-bit vector multiplication.
+    */
+    static inline MM_VECT(i) _mm_mul_pi16( MM_VECT(i) a, MM_VECT(i) b )
+    {
+        MM_VECT(i) mm_low  = MM_MUL_LO( a, b );
+        MM_VECT(i) mm_high = MM_MUL_HI( a, b );
+        return MM_ADD(i,16)( mm_low, mm_high );
+    }
+    
+    /**
+    * Function used to compute 8-bit vector multiplication.
+    */
+    static inline MM_VECT(i) _mm_mul_pi8( MM_VECT(i) a, MM_VECT(i) b )
+    {
+        // Unpack and multiply.
+        MM_VECT(i) dst_even = MM_MUL_LO( a, b );
+        MM_VECT(i) dst_odd  = MM_MUL_LO( MM_SR_LI( a, 8 ), MM_SR_LI( b, 8 ) );
+        // Repack.
+    #if defined( __AVX__ ) || defined( __AVX2__ )
+        // Only faster if have access to VPBROADCASTW.
+        return MM_OR_SI( MM_SL_LI( dst_odd, 8 ), MM_AND_SI( dst_even, MM_SET1(i,16)( 0xFF ) ) );
+    #else
+        return MM_OR_SI( MM_SL_LI( dst_odd, 8 ), MM_SR_LI( MM_SL_LI( dst_even, 8 ), 8 ) );
+    #endif
+    }
+
     template<typename Function, class M, typename T>
     class Operation
     {
@@ -215,10 +242,10 @@ namespace functors
     		
             virtual MV_INLINE T apply( const size_dim& offset ) = 0;
         #ifndef NO_VECTORIALIZATION
-            virtual MV_INLINE MM_VECT()  apply_vect_f( const size_dim& offset ) = 0;
-            virtual MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset ) = 0;
-            //virtual MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset ) = 0;
-            //virtual MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT()  apply_vect_f(    const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT(d) apply_vect_d(    const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT(i) apply_vect_i_8(  const size_dim& offset ) = 0;
         #endif
     };
     
@@ -263,10 +290,10 @@ namespace functors
         
             virtual MV_INLINE T apply( const size_dim& offset ) = 0;
         #ifndef NO_VECTORIALIZATION
-            virtual MV_INLINE MM_VECT()  apply_vect_f( const size_dim& offset ) = 0;
-            virtual MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset ) = 0;
-            //virtual MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset ) = 0;
-            //virtual MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT()  apply_vect_f(    const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT(d) apply_vect_d(    const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT(i) apply_vect_i_8(  const size_dim& offset ) = 0;
         #endif
     };
     
@@ -316,10 +343,10 @@ namespace functors
         
             virtual MV_INLINE T apply( const size_dim& offset ) = 0;
         #ifndef NO_VECTORIALIZATION
-            virtual MV_INLINE MM_VECT()  apply_vect_f( const size_dim& offset ) = 0;
-            virtual MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset ) = 0;
-            //virtual MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset ) = 0;
-            //virtual MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT()  apply_vect_f(    const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT(d) apply_vect_d(    const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset ) = 0;
+            virtual MV_INLINE MM_VECT(i) apply_vect_i_8(  const size_dim& offset ) = 0;
         #endif
     };
     
@@ -341,6 +368,12 @@ namespace functors
             
             MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset )
             { return MM_ADD(d,)( this->_m->_x_vec_d[offset], this->_next->apply_vect_d( offset ) ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset )
+            { return MM_ADD(i,16)( this->_m->_x_vec_i[offset], this->_next->apply_vect_i_16( offset ) ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset )
+            { return MM_ADD(i,8)( this->_m->_x_vec_i[offset], this->_next->apply_vect_i_8( offset ) ); }
         #endif
     };
     
@@ -360,6 +393,12 @@ namespace functors
             
             MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset )
             { return MM_ADD(d,)( this->_m1->_x_vec_d[offset], this->_m2->_x_vec_d[offset] ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset )
+            { return MM_ADD(i,16)( this->_m1->_x_vec_i[offset], this->_m2->_x_vec_i[offset] ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset )
+            { return MM_ADD(i,8)( this->_m1->_x_vec_i[offset], this->_m2->_x_vec_i[offset] ); }
         #endif
     };
     
@@ -373,8 +412,9 @@ namespace functors
                 const T _val ALIGN = val;
                 T _a_val[sizeof(T)] ALIGN;
 	            for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = _val;
-	            if(IS_DOUBLE(T)) this->_c_vect_d = *((MM_VECT(d)*) _a_val);
-	            if(IS_FLOAT(T))  this->_c_vect_s = *((MM_VECT( )*) _a_val);
+	            if(IS_DOUBLE(T))        this->_c_vect_d = *((MM_VECT(d)*) _a_val);
+	            else if(IS_FLOAT(T))    this->_c_vect_s = *((MM_VECT( )*) _a_val);
+	            else /*Short and Char*/ this->_c_vect_i = *((MM_VECT(i)*) _a_val);
             #endif
             }
             
@@ -387,6 +427,12 @@ namespace functors
             
             MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset )
             { return MM_ADD(d,)( this->_m->_x_vec_d[offset], this->_c_vect_d ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset )
+            { return MM_ADD(i,16)( this->_m->_x_vec_i[offset], this->_c_vect_i ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset )
+            { return MM_ADD(i,8)( this->_m->_x_vec_i[offset], this->_c_vect_i ); }
         #endif
     };
     
@@ -406,6 +452,12 @@ namespace functors
             
             MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset )
             { return MM_SUB(d,)( this->_m->_x_vec_d[offset], this->_next->apply_vect_d( offset ) ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset )
+            { return MM_SUB(i,16)( this->_m->_x_vec_i[offset], this->_next->apply_vect_i_16( offset ) ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset )
+            { return MM_SUB(i,8)( this->_m->_x_vec_i[offset], this->_next->apply_vect_i_8( offset ) ); }
         #endif
     };
     
@@ -425,6 +477,12 @@ namespace functors
             
             MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset )
             { return MM_SUB(d,)( this->_m1->_x_vec_d[offset], this->_m2->_x_vec_d[offset] ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset )
+            { return MM_SUB(i,16)( this->_m1->_x_vec_i[offset], this->_m2->_x_vec_i[offset] ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset )
+            { return MM_SUB(i,8)( this->_m1->_x_vec_i[offset], this->_m2->_x_vec_i[offset] ); }
         #endif
     };
     
@@ -433,7 +491,16 @@ namespace functors
     {
         public:
             SubConst( M* m, const T& val ) : ConstOperation<M,T>( m, val )
-            {}
+            {
+            #ifndef NO_VECTORIALIZATION
+                const T _val ALIGN = val;
+                T _a_val[sizeof(T)] ALIGN;
+	            for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = _val;
+	            if(IS_DOUBLE(T))        this->_c_vect_d = *((MM_VECT(d)*) _a_val);
+	            else if(IS_FLOAT(T))    this->_c_vect_s = *((MM_VECT( )*) _a_val);
+	            else /*Short and Char*/ this->_c_vect_i = *((MM_VECT(i)*) _a_val);
+            #endif
+            }
             
             MV_INLINE T apply( const size_dim& offset )
             { return this->_m->_data[this->_m->_index + offset] - this->_value; }
@@ -444,6 +511,12 @@ namespace functors
             
             MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset )
             { return MM_SUB(d,)( this->_m->_x_vec_d[offset], this->_c_vect_d ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset )
+            { return MM_SUB(i,16)( this->_m->_x_vec_i[offset], this->_c_vect_i ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset )
+            { return MM_SUB(i,8)( this->_m->_x_vec_i[offset], this->_c_vect_i ); }
         #endif
     };
     
@@ -463,6 +536,12 @@ namespace functors
             
             MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset )
             { return MM_MUL(d,)( this->_m->_x_vec_d[offset], this->_next->apply_vect_d( offset ) ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset )
+            { return MM_MUL(i,16)( this->_m->_x_vec_i[offset], this->_next->apply_vect_i_16( offset ) ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset )
+            { return MM_MUL(i,8)( this->_m->_x_vec_i[offset], this->_next->apply_vect_i_8( offset ) ); }
         #endif
     };
     
@@ -482,6 +561,12 @@ namespace functors
             
             MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset )
             { return MM_MUL(d,)( this->_m1->_x_vec_d[offset], this->_m2->_x_vec_d[offset] ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset )
+            { return MM_MUL(i,16)( this->_m1->_x_vec_i[offset], this->_m2->_x_vec_i[offset] ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset )
+            { return MM_MUL(i,8)( this->_m->_x_vec_i[offset], this->_m2->_x_vec_i[offset] ); }
         #endif
     };
     
@@ -495,8 +580,9 @@ namespace functors
                 const T _val ALIGN = val;
                 T _a_val[sizeof(T)] ALIGN;
 	            for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = _val;
-	            if(IS_DOUBLE(T)) this->_c_vect_d = *((MM_VECT(d)*) _a_val);
-	            if(IS_FLOAT(T))  this->_c_vect_s = *((MM_VECT( )*) _a_val);
+	            if(IS_DOUBLE(T))        this->_c_vect_d = *((MM_VECT(d)*) _a_val);
+	            else if(IS_FLOAT(T))    this->_c_vect_s = *((MM_VECT( )*) _a_val);
+	            else /*Short and Char*/ this->_c_vect_i = *((MM_VECT(i)*) _a_val);
             #endif
             }
             
@@ -509,6 +595,12 @@ namespace functors
             
             MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset )
             { return MM_MUL(d,)( this->_m->_x_vec_d[offset], this->_c_vect_d ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset )
+            { return MM_MUL(i,16)( this->_m->_x_vec_i[offset], this->_c_vect_i ); }
+            
+            MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset )
+            { return MM_MUL(i,8)( this->_m->_x_vec_i[offset], this->_c_vect_i ); }
         #endif
     };
     
