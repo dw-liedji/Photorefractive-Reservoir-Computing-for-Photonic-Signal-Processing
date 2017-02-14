@@ -308,10 +308,10 @@ namespace algebra
             {
                 _range.checkSize( "operator*=", __LINE__, in->_range );
                 
-                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( *=, MM_MUL(s,)( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
-                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( *=, MM_MUL(d,)( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
+                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( *=, MM_MUL(s,  )( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( *=, MM_MUL(d,  )( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
                 else if(IS_SHORT(T)) {    COMPUTE_OP_BINARY( *=, MM_MUL(i,16)( L_VECT(i)[i], in->L_VECT(i)[i] ), i, i ); }
-                else if(IS_CHAR(T)) {     COMPUTE_OP_BINARY( *=, MM_MUL(i,8)( L_VECT(i)[i], in->L_VECT(i)[i] ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_BINARY( *=, MM_MUL(i,8 )( L_VECT(i)[i], in->L_VECT(i)[i] ), i, i ); }
                 
                 return this;
             }
@@ -321,10 +321,10 @@ namespace algebra
             {
                 _range.checkSize( "operator*=", __LINE__, fun->getRange() );
                 
-                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( *=, MM_MUL(s,)( L_VECT(s)[i], fun->apply_vect_f( i ) ),  , s ); }
-                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( *=, MM_MUL(d,)( L_VECT(d)[i], fun->apply_vect_d( i ) ), d, d ); }
+                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( *=, MM_MUL(s,  )( L_VECT(s)[i], fun->apply_vect_f( i ) ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( *=, MM_MUL(d,  )( L_VECT(d)[i], fun->apply_vect_d( i ) ), d, d ); }
                 else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( *=, MM_MUL(i,16)( L_VECT(i)[i], fun->apply_vect_i_16( i ) ), i, i ); }
-                else if(IS_CHAR(T)) {     COMPUTE_OP_MULTI( *=, MM_MUL(i,8)( L_VECT(i)[i], fun->apply_vect_i_8( i ) ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_MULTI( *=, MM_MUL(i,8 )( L_VECT(i)[i], fun->apply_vect_i_8( i ) ), i, i ); }
                 
                 return this;
             }
@@ -333,10 +333,10 @@ namespace algebra
             {
                 const T value ALIGN = val;
                 
-                if(IS_FLOAT( T )) {       COMPUTE_OP_CONST( *=, MM_MUL(s,)( L_VECT(s)[i], x_c_vec ),  , s ); }
-                else if(IS_DOUBLE( T )) { COMPUTE_OP_CONST( *=, MM_MUL(d,)( L_VECT(d)[i], x_c_vec ), d, d ); }
+                if(IS_FLOAT( T )) {       COMPUTE_OP_CONST( *=, MM_MUL(s,  )( L_VECT(s)[i], x_c_vec ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_CONST( *=, MM_MUL(d,  )( L_VECT(d)[i], x_c_vec ), d, d ); }
                 else if(IS_SHORT(T)) {    COMPUTE_OP_CONST( *=, MM_MUL(i,16)( L_VECT(i)[i], x_c_vec ), i, i ); }
-                else if(IS_CHAR(T)) {     COMPUTE_OP_CONST( *=, MM_MUL(i,8)( L_VECT(i)[i], x_c_vec ), i, i ); }
+                else if(IS_CHAR(T)) {     COMPUTE_OP_CONST( *=, MM_MUL(i,8 )( L_VECT(i)[i], x_c_vec ), i, i ); }
                 
                 return this;
             }
