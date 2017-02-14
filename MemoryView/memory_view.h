@@ -276,7 +276,7 @@ namespace algebra
             template<typename Function>
             inline Sum<Function,MemoryView,T>* operator+( Function* f )
             {
-                //TODO _range.checkSize( "operator+", __LINE__, f->getRange() );
+                _range.checkSize( "operator+", __LINE__, f->getRange() );
                 return new Sum<Function,MemoryView,T>( new MemoryView<T>( this ), f );
             }
             
@@ -291,7 +291,7 @@ namespace algebra
             template<typename Function>
             inline Sub<Function,MemoryView,T>* operator-( Function* f )
             {
-                //TODO _range.checkSize( "operator+", __LINE__, f->getRange() );
+                _range.checkSize( "operator+", __LINE__, f->getRange() );
                 return new Sub<Function,MemoryView,T>( new MemoryView<T>( this ), f );
             }
             
@@ -306,7 +306,7 @@ namespace algebra
             template<typename Function>
             inline Mul<Function,MemoryView,T>* operator*( Function* f )
             {
-                //TODO _range.checkSize( "operator+", __LINE__, f->getRange() );
+                _range.checkSize( "operator+", __LINE__, f->getRange() );
                 return new Mul<Function,MemoryView,T>( new MemoryView<T>( this ), f );
             }
             
@@ -330,7 +330,7 @@ namespace algebra
             template<typename Function>
             inline MemoryView<T>* operator*=( Function* fun )
             {
-                // TODO _range.checkSize( "operator*=", __LINE__, fun->getRange() );
+                _range.checkSize( "operator*=", __LINE__, fun->getRange() );
                 
                 if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( *=, MM_MULs()( L_VECT(s)[i], fun->apply_vect_f( i ) ),  , s ); }
                 else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( *=, MM_MULd()( L_VECT(d)[i], fun->apply_vect_d( i ) ), d, d ); }
@@ -370,7 +370,7 @@ namespace algebra
             template<typename Function>
             inline MemoryView<T>* operator=( Function* fun )
             {
-                // TODO _range.checkSize( "operator*=", __LINE__, fun->getRange() );
+                _range.checkSize( "operator*=", __LINE__, fun->getRange() );
                 
                 if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( =, fun->apply_vect_f( i ),  , s ); }
                 else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( =, fun->apply_vect_d( i ), d, d ); }
@@ -405,7 +405,7 @@ namespace algebra
             template<typename Function>
             inline MemoryView<T>* operator+=( Function* fun )
             {
-                // TODO _range.checkSize( "operator*=", __LINE__, f->getRange() );
+                _range.checkSize( "operator*=", __LINE__, fun->getRange() );
                 
                 if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( +=, MM_ADD(s,)( L_VECT(s)[i], fun->apply_vect_f(i) ),  , s ); }
                 else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( +=, MM_ADD(d,)( L_VECT(d)[i], fun->apply_vect_d(i) ), d, d ); }
@@ -429,7 +429,7 @@ namespace algebra
             template<typename Function>
             inline MemoryView<T>* operator-=( Function* fun )
             {
-                // TODO _range.checkSize( "operator*=", __LINE__, f->getRange() );
+                _range.checkSize( "operator*=", __LINE__, fun->getRange() );
                 
                 if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( -=, MM_SUB(s,)( L_VECT(s)[i], fun->apply_vect_f(i) ),  , s ); }
                 else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( -=, MM_SUB(d,)( L_VECT(d)[i], fun->apply_vect_d(i) ), d, d ); }
