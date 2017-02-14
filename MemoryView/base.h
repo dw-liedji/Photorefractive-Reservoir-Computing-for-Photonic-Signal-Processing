@@ -54,7 +54,7 @@ namespace algebra
             
             size_dim _size;
             
-            size_dim block = BLOCK / sizeof( T );
+            //size_dim block = BLOCK / sizeof( T );
         #ifdef NO_VECTORIALIZATION
             bool VECTORIALIZATION = false;
         #else

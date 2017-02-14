@@ -116,7 +116,7 @@
         else {                                                                           \
 	        /* Vectorialized solution. */                                                \
             COMPUTE_OP_VECTORIALIZED( VECT_OP, fun->apply( i ),                          \
-                                      OP, (fun->update( 1, block )),                     \
+                                      OP, (fun->update<1,block>()),                      \
                                       type_suffix, op_suffix );                          \
         }                                                                                \
     }
@@ -199,7 +199,7 @@ namespace functors
             
             template<int dim, int offset>
             inline void update()
-            { _next->update<dim, offset>(); _m->update<offset>( dim ); }
+            { _next->update<dim, offset>(); _m->update<dim,offset>(); }
             
             template<int offset>
             inline void update( const int &dim )
@@ -246,7 +246,7 @@ namespace functors
             
             template<int dim, int offset>
             inline void update()
-            { _m1->update<offset>( dim ); _m2->update<offset>( dim ); }
+            { _m1->update<dim,offset>(); _m2->update<dim,offset>(); }
             
             template<int offset>
             inline void update( const int &dim )
@@ -298,7 +298,7 @@ namespace functors
             
             template<int dim, int offset>
             inline void update()
-            { _m->update<offset>( dim ); }
+            { _m->update<dim,offset>(); }
             
             template<int offset>
             inline void update( const int &dim )

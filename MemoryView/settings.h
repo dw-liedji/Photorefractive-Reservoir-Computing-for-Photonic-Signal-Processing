@@ -140,6 +140,9 @@ typedef int64_t size_m;
     #define ALIGN
 #endif
 
+// Current block dimension.
+#define block (BLOCK/sizeof(T))
+
 
 
 #endif /* _SETTINGS_H */
