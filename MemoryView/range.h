@@ -44,7 +44,7 @@ class Range
                 index = (index+1) % 2;
             }
             
-            _size = boundaries.size() / 2;
+            if(_size == 0) _size = boundaries.size() / 2;
             _sliced = sliced;
         }
         
@@ -58,10 +58,10 @@ class Range
             
             size_dim offset = 0, in_offset = 0;
             for(size_dim i = 0; i < _size; i++) {
-            	if(shape( i+offset ) == 1 && in.shape( i+in_offset ) == 1) { offset++; in_offset++; continue; }
-            	if(shape( i+offset ) == 1) { offset++; continue; }
+                if(shape( i+offset ) == 1 && in.shape( i+in_offset ) == 1) { offset++; in_offset++; continue; }
+                if(shape( i+offset ) == 1) { offset++; continue; }
                 if(in.shape( i+in_offset ) == 1) { in_offset++; continue; }
-                if(shape( i+offset) != in.shape( i+in_offset )) {
+                if(shape( i+offset ) != in.shape( i+in_offset )) {
                     printf( "[%s, Line: %d] Different input shapes: (", fun, line ); printSize();
                     printf( ") and (" ); in.printSize(); printf( ")\n" );
                     throw;
@@ -69,7 +69,7 @@ class Range
             }
         }
         
-        INLINE bool isSliced()
+        MV_INLINE bool isSliced()
         { return _sliced; }
         
         inline size_dim getTotalSize()
@@ -79,7 +79,7 @@ class Range
         inline size_m shape()
         { return _shapes[dim]; }
         
-        INLINE size_m shape( const int& dim )
+        MV_INLINE size_m shape( const int& dim )
         { return _shapes[dim]; }
         
     private:

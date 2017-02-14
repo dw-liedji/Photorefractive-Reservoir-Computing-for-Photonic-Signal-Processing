@@ -3,7 +3,8 @@
  *  memory_view.h
  *
  *  Created on: 12 dec 2016
- *  Authors: Stefano Ceccotti & Tommaso Catuogno
+ *  Author: Stefano Ceccotti
+ *  Author: Tommaso Catuogno
 */
 
 #ifndef _MEMORY_VIEW_H
@@ -28,6 +29,7 @@
 #include "settings.h"
 
 using namespace std;
+using namespace functors;
 
 namespace algebra
 {
@@ -38,12 +40,14 @@ namespace algebra
             T* _data = NULL;
             size_dim _index;
         #ifndef NO_VECTORIALIZATION
-            MM_VECT* _x_vec;
+            MM_VECT(i)* _x_vec_i;
+            MM_VECT()*  _x_vec_s;
+            MM_VECT(d)* _x_vec_d;
         #endif
+        
         private:
             Range _range;
             
-            Function<MemoryView,T>* _fun = NULL;
             size_m   _dimensions[MAX_DIMENSIONS];
             size_dim _sizeDimensions[MAX_DIMENSIONS];
             
@@ -65,7 +69,8 @@ namespace algebra
             MemoryView( const std::vector<size_dim> dimensions ) /*: Base<T>( dimensions )*/
             {
                 build<std::vector<size_dim>>( dimensions );
-                _data = (T*) _mm_malloc( _range.getTotalSize() * sizeof( T ), BLOCK );
+                _data = (T*) calloc( _range.getTotalSize(), sizeof( T ) );
+                //_data = (T*) _mm_malloc( total_size * sizeof( T ), BLOCK );
             }
             
             MemoryView( T* data, const std::vector<size_dim> dimensions ) /*: Base<T>( data, dimensions )*/
@@ -82,7 +87,7 @@ namespace algebra
             
             MemoryView( const MemoryView<T>* other ) /*: Base<T>( other )*/
             {
-                _size           = other->_size;
+                _size = other->_size;
                 
                 memcpy( _dimensions, other->_dimensions, sizeof( size_m ) * MAX_DIMENSIONS );
                 memcpy( _sizeDimensions, other->_sizeDimensions, sizeof( size_dim ) * MAX_DIMENSIONS );
@@ -91,7 +96,7 @@ namespace algebra
                 memcpy( _positions, other->_positions, sizeof( size_dim ) * MAX_DIMENSIONS );
                 
                 _data = other->_data;
-                _range = other->_range;
+                memcpy( &_range, &(other->_range), sizeof( Range) );
             }
         
         private:
@@ -121,16 +126,14 @@ namespace algebra
             }
             
             
+            
             // ======== UTILITY METHODS ======== //
-            
-            
-            
             
         public:
             T* data() { return _data; }
             
             template<bool sliced>
-            void setRange( const std::vector<size_dim> boundaries )
+            inline void setRange( const std::vector<size_dim> boundaries )
             { _range.setRange<sliced>( boundaries ); }
             
             MemoryView<T>* slice( const std::vector<size_dim> boundaries )
@@ -150,7 +153,7 @@ namespace algebra
                 return _tmp;
             }
             
-            T get( const std::vector<size_dim> positions )
+            inline T get( const std::vector<size_dim> positions )
             {
                 size_dim i = 0, _pos = 0;
                 for(size_dim pos : positions)
@@ -159,7 +162,7 @@ namespace algebra
                 return _data[_pos];
             }
             
-            std::vector<size_dim> getDimensions()
+            inline std::vector<size_dim> getDimensions()
             {
                 std::vector<size_dim> dimensions( _size );
                 for(size_dim i = 0; i < _size; i++)
@@ -168,10 +171,24 @@ namespace algebra
                 return dimensions;
             }
             
-            INLINE size_dim getIndex()
+            MV_INLINE void copyFrom( MemoryView* other )
+            {
+                _size = other->_size;
+                
+                memcpy( _dimensions, other->_dimensions, sizeof( size_m ) * MAX_DIMENSIONS );
+                memcpy( _sizeDimensions, other->_sizeDimensions, sizeof( size_dim ) * MAX_DIMENSIONS );
+                
+                memcpy( _indices, other->_indices, sizeof( size_m ) * MAX_DIMENSIONS );
+                memcpy( _positions, other->_positions, sizeof( size_dim ) * MAX_DIMENSIONS );
+                
+                _data = other->_data;
+                _range = other->_range;
+            }
+            
+            MV_INLINE size_dim getIndex()
             { return _index; }
             
-            INLINE void loadIndex()
+            MV_INLINE void loadIndex()
             {
                 _index = 0;
                 for(size_dim i = 0; i < _size; i++)
@@ -183,30 +200,34 @@ namespace algebra
             
         #ifndef NO_VECTORIALIZATION
             INLINE void loadVector()
-            { _x_vec = (MM_VECT*) (_data + _index); }
+            {
+                if(IS_DOUBLE( T )) _x_vec_d = (MM_VECT(d)*) (_data + _index);
+                else if(IS_FLOAT( T )) _x_vec_s = (MM_VECT()*) (_data + _index);
+                else _x_vec_i = (MM_VECT(i)*) (_data + _index);
+            }
         #endif
             
-            INLINE bool isSliced()
+            MV_INLINE bool isSliced()
             { return _range.isSliced(); }
             
-            INLINE bool isSubBlock()
+            MV_INLINE bool isSubBlock()
             {
                 for(size_dim i = 1; i < _size; i++)
                     if(_range.shape(i) != _dimensions[i]) return false;
                 return true;
             }
             
-            INLINE size_dim toAlignment()
+            MV_INLINE size_dim toAlignment()
 			{ return (block - (_index % block)) % block; }
             
-            INLINE bool isAligned()
+            MV_INLINE bool isAligned()
             { return _data != NULL && ((uintptr_t) &(_data[_index])) % BLOCK == 0; }
             
-            INLINE bool isAlignable()
+            MV_INLINE bool isAlignable()
             { return _data != NULL && (BLOCK - (((uintptr_t) &(_data[0])) % BLOCK)) % sizeof( T ) == 0; }
             
             template<int offset>
-            INLINE void update( const int dim )
+            MV_INLINE void update( const int dim )
             {
                 switch( dim ) {
                     case( 1 ): _index += offset; break;
@@ -216,7 +237,7 @@ namespace algebra
             }
             
             template<int dim, int offset>
-            INLINE void update()
+            MV_INLINE void update()
             {
                 switch( dim ) {
                     case( 1 ): _index += offset; break;
@@ -225,7 +246,7 @@ namespace algebra
                 }
             }
             
-            INLINE void update( const int dim, const int offset )
+            MV_INLINE void update( const int dim, const int offset )
             {
                 switch( dim ) {
                     case( 1 ): _index += offset; break;
@@ -240,119 +261,179 @@ namespace algebra
             
             // === VECTOR OPERATIONS === //
             
-            inline MemoryView<T>* operator+( void ){ return this; }
+            inline MemoryView<T>* operator+( void )
+            { return this; }
             
-            inline MemoryView<T>* operator+( MemoryView<T>* in )
+            inline SumEnd<MemoryView,T>* operator+( MemoryView<T>* in )
             {
                 _range.checkSize( "operator+", __LINE__, in->_range );
-                
-                _fun = new Function<MemoryView,T>( new MemoryView<T>( this ),
-                                                   new MemoryView<T>( in ),
-                                                   Function<MemoryView,T>::sum );
-                
-            #ifndef NO_VECTORIALIZATION
-                _fun->addVectFunction( Function<MemoryView,T>::v_sum );
-            #endif
-                
-                _fun->addNext( in->_fun );
-                
-                return this;
+                return new SumEnd<MemoryView,T>( new MemoryView<T>( this ), new MemoryView<T>( in ) );
             }
             
-            inline MemoryView<T>* operator-( MemoryView<T>* in )
+            template<typename Function>
+            inline Sum<Function,MemoryView,T>* operator+( Function* f )
+            {
+                //TODO _range.checkSize( "operator+", __LINE__, f->getRange() );
+                return new Sum<Function,MemoryView,T>( new MemoryView<T>( this ), f );
+            }
+            
+            
+            
+            inline SubEnd<MemoryView,T>* operator-( MemoryView<T>* in )
             {
                 _range.checkSize( "operator-", __LINE__, in->_range );
-                
-                _fun = new Function<MemoryView,T>( new MemoryView<T>( this ),
-                                                   new MemoryView<T>( in ),
-                                                   Function<MemoryView,T>::sub );
-                
-            #ifndef NO_VECTORIALIZATION
-                _fun->addVectFunction( Function<MemoryView,T>::v_sub );
-            #endif
-                
-                _fun->addNext( in->_fun );
-                
-                return this;
+                return new SubEnd<MemoryView,T>( new MemoryView<T>( this ), new MemoryView<T>( in ) );
             }
             
-            inline MemoryView<T>* operator*( MemoryView<T>* in )
+            template<typename Function>
+            inline Sub<Function,MemoryView,T>* operator-( Function* f )
+            {
+                //TODO _range.checkSize( "operator+", __LINE__, f->getRange() );
+                return new Sub<Function,MemoryView,T>( new MemoryView<T>( this ), f );
+            }
+            
+            
+            
+            inline MulEnd<MemoryView,T>* operator*( MemoryView<T>* in )
             {
                 _range.checkSize( "operator*", __LINE__, in->_range );
-                
-                _fun = new Function<MemoryView,T>( new MemoryView<T>( this ),
-                                                   new MemoryView<T>( in ),
-                                                   Function<MemoryView,T>::mul );
-                
-            #ifndef NO_VECTORIALIZATION
-                _fun->addVectFunction( Function<MemoryView,T>::v_mul );
-            #endif
-                
-                _fun->addNext( in->_fun );
-                
-                return this;
+                return new MulEnd<MemoryView,T>( new MemoryView<T>( this ), new MemoryView<T>( in ) );
             }
             
-            inline MemoryView<T>* operator*( const T& value )
+            template<typename Function>
+            inline Mul<Function,MemoryView,T>* operator*( Function* f )
             {
-                _fun = new Function<MemoryView,T>( new MemoryView<T>( this ), NULL,
-                                                   Function<MemoryView,T>::mul, value );
-                
-            #ifndef NO_VECTORIALIZATION
-                _fun->addConstFunction( Function<MemoryView,T>::v_mul );
-            #endif
-                
-                return this;
+                //TODO _range.checkSize( "operator+", __LINE__, f->getRange() );
+                return new Mul<Function,MemoryView,T>( new MemoryView<T>( this ), f );
             }
+            
+            inline MulConst<MemoryView,T>* operator*( const T& value )
+            { return new MulConst<MemoryView,T>( new MemoryView<T>( this ), value ); }
+            
+            
             
             inline MemoryView<T>* operator*=( MemoryView<T>* in )
             {
                 _range.checkSize( "operator*=", __LINE__, in->_range );
                 
-                COMPUTE_OP_MULTI( *=, MM_MUL( _x_vec[i], fun->apply_vect( i ) ), MM_MUL( _x_vec[i], in->_x_vec[i] ) );
+                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( *=, MM_MULs()( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( *=, MM_MULd()( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
+                // TODO completare anche per short e char..
+                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_BINARY( *=, MM_MUL( s )( x_vec, FUN_CALL_POINTER( fun, i ) ), MM_MUL( s )( x_vec1, x_vec2 ), i, i ); }
+                
+                return this;
+            }
+            
+            template<typename Function>
+            inline MemoryView<T>* operator*=( Function* fun )
+            {
+                // TODO _range.checkSize( "operator*=", __LINE__, fun->getRange() );
+                
+                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( *=, MM_MULs()( L_VECT(s)[i], fun->apply_vect_f( i ) ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( *=, MM_MULd()( L_VECT(d)[i], fun->apply_vect_d( i ) ), d, d ); }
+                // TODO completare anche per short e char..
+                //else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( *=, MM_MUL(i,16)( L_VECT(i)[i], in->apply_vect_i16( i ) ), i, i ); }
+                //else if(IS_CHAR(T)) {    COMPUTE_OP_MULTI( *=, MM_MUL(i,8)( L_VECT(i)[i], in->apply_vect_i8( i ) ), i, i ); }
+                
                 return this;
             }
             
             inline MemoryView<T>* operator*=( const T& val )
             {
                 const T value ALIGN = val;
-                COMPUTE_OP_CONST( *=, MM_MUL( _x_vec[i], x_c_vec ) );
+                
+                if(IS_FLOAT( T )) {       COMPUTE_OP_CONST( *=, MM_MULs()( L_VECT(s)[i], x_c_vec ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_CONST( *=, MM_MULd()( L_VECT(d)[i], x_c_vec ), d, d ); }
+                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_CONST( *=, MM_MUL(i,8)( x_vec1, x_vec2 ), i, i ); }
+                
                 return this;
             }
             
             inline MemoryView<T>* operator=( MemoryView<T>* in )
             {
-                if(in->_fun == NULL && !isSliced()) {
-                    // TODO Set the values of the input matrix into the destination matrix.
-                    return in;
-                }
-                
                 _range.checkSize( "operator=", __LINE__, in->_range );
                 
-                COMPUTE_OP_MULTI( =, fun->apply_vect( i ), in->_x_vec[i] );
+                if(!isSliced())
+                    this->copyFrom( in );
+                else {
+                    if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( =, in->L_VECT(s)[i],  , s ); }
+                    else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( =, in->L_VECT(d)[i], d, d ); }
+                    //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_MULTI( =, x_vec1 = x_vec2, i, i ); }
+                }
+                
+                return this;
+            }
+            
+            template<typename Function>
+            inline MemoryView<T>* operator=( Function* fun )
+            {
+                // TODO _range.checkSize( "operator*=", __LINE__, fun->getRange() );
+                
+                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( =, fun->apply_vect_f( i ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( =, fun->apply_vect_d( i ), d, d ); }
+                // TODO completare anche per short e char..
+                //else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( =, fun->apply_vect_i16( i ), i, i ); }
+                //else if(IS_CHAR(T)) {    COMPUTE_OP_MULTI( =, fun->apply_vect_i8( i ), i, i ); }
+                
                 return this;
             }
             
             inline MemoryView<T>* operator=( const T& val )
             {
                 const T value ALIGN = val;
-                COMPUTE_OP_CONST( =, x_c_vec );
+                
+                if(IS_FLOAT( T )) {       COMPUTE_OP_CONST( =, x_c_vec,  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_CONST( =, x_c_vec, d, d ); }
+                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_CONST( *=, x_c_vec, i, i ); }
+                
                 return this;
             }
             
             inline MemoryView<T>* operator+=( MemoryView<T>* in )
-            {
+            { 
                 _range.checkSize( "operator+=", __LINE__, in->_range );
+                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( +=, MM_ADD(s,)( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( +=, MM_ADD(d,)( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
+                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_BINARY( +=, MM_ADD( s )( x_vec, FUN_CALL_POINTER( fun, i ) ), MM_ADD( s )( x_vec1, x_vec2 ), i, i ); }
                 
-                COMPUTE_OP_MULTI( +=, MM_ADD( _x_vec[i], fun->apply_vect( i ) ), MM_ADD( _x_vec[i], in->_x_vec[i] ) );
+                return this;
+            }
+            
+            template<typename Function>
+            inline MemoryView<T>* operator+=( Function* fun )
+            {
+                // TODO _range.checkSize( "operator*=", __LINE__, f->getRange() );
+                
+                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( +=, MM_ADD(s,)( L_VECT(s)[i], fun->apply_vect_f(i) ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( +=, MM_ADD(d,)( L_VECT(d)[i], fun->apply_vect_d(i) ), d, d ); }
+                // TODO completare anche per short e char..
+                //else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( +=, MM_ADD(i,16)( L_VECT(i)[i], fun->apply_vect_i16( i ) ), i, i ); }
+                //else if(IS_CHAR(T)) {    COMPUTE_OP_MULTI( +=, MM_ADD(i,8)( L_VECT(i)[i], fun->apply_vect_i8( i ) ), i, i ); }
+                
                 return this;
             }
             
             inline MemoryView<T>* operator-=( MemoryView<T>* in )
             {
                 _range.checkSize( "operator-=", __LINE__, in->_range );
+                if(IS_FLOAT( T )) {       COMPUTE_OP_BINARY( -=, MM_SUB(s,)( L_VECT(s)[i], in->L_VECT(s)[i] ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_BINARY( -=, MM_SUB(d,)( L_VECT(d)[i], in->L_VECT(d)[i] ), d, d ); }
+                //else if(typeid(T) == typeid(int)) {    COMPUTE_OP_BINARY( -=, MM_SUB( s )( x_vec, FUN_CALL_POINTER( fun, i ) ), MM_SUB( s )( x_vec1, x_vec2 ), i, i ); }
                 
-                COMPUTE_OP_MULTI( -=, MM_SUB( _x_vec[i], fun->apply_vect( i ) ), MM_SUB( _x_vec[i], in->_x_vec[i] ) );
+                return this;
+            }
+            
+            template<typename Function>
+            inline MemoryView<T>* operator-=( Function* fun )
+            {
+                // TODO _range.checkSize( "operator*=", __LINE__, f->getRange() );
+                
+                if(IS_FLOAT( T )) {       COMPUTE_OP_MULTI( -=, MM_SUB(s,)( L_VECT(s)[i], fun->apply_vect_f(i) ),  , s ); }
+                else if(IS_DOUBLE( T )) { COMPUTE_OP_MULTI( -=, MM_SUB(d,)( L_VECT(d)[i], fun->apply_vect_d(i) ), d, d ); }
+                // TODO completare anche per short e char..
+                //else if(IS_SHORT(T)) {    COMPUTE_OP_MULTI( -=, MM_SUB(i,16)( L_VECT(i)[i], fun->apply_vect_i16( i ) ), i, i ); }
+                //else if(IS_CHAR(T)) {    COMPUTE_OP_MULTI( -=, MM_SUB(i,8)( L_VECT(i)[i], fun->apply_vect_i8( i ) ), i, i ); }
+                
                 return this;
             }
             
@@ -378,7 +459,7 @@ namespace algebra
                     if(colon == string::npos || colon > next) { // Not found.
                         // Unary position.
                         pos = stoi( index.substr( curr, (colon-curr) ) );
-                        CHECK_INDEX( pos, _dimensions[dim] );
+                        if(pos >= _dimensions[dim]){ fprintf( stderr, "Out of bounds on buffer access (dimension %ld).\n", (dim+1) ); throw; };
                         
                         boundaries[2*dim] = (pos < 0) ? _range._boundaries[dim].second + pos : _range._boundaries[dim].first + pos;
                         boundaries[2*dim+1] = boundaries[2*dim] + 1;
@@ -542,7 +623,9 @@ namespace algebra
                 if(dim == _size-1) {
                     for(size_dim i = from; i < to; i++) {
                         indices[dim] = i;
-                        printf( (i < to-1) ? " %.8lf " : " %.8lf", get( indices ) );
+                        T value = get( indices );
+                        if(value < 0) printf( (i < to-1) ? "%.8lf " : "%.8lf", value );
+                        else printf( (i < to-1) ? " %.8lf " : " %.8lf", value );
                     }
                 }
                 else {
@@ -566,8 +649,7 @@ namespace algebra
             }
         
         public:
-            ~MemoryView()
-            { if(_data != NULL) _mm_free( _data ); }
+            ~MemoryView(){ if(_data != NULL) free( _data ); }
     };
 }
 

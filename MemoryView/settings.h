@@ -16,15 +16,27 @@ typedef int64_t size_dim;
 typedef int64_t size_m;
 
 
-#ifndef INLINE
-    #define INLINE __attribute__((always_inline))
-#endif
+#define MV_INLINE __attribute__((always_inline))
 
 
 // Define the Maximum number of accepted dimensions.
 #undef MAX_DIMENSIONS
 #define MAX_DIMENSIONS 32
 
+#define _MAX(a,b) (((a) > (b)) ? (a) : (b))
+
+// Check the size of the actual type.
+#define IS_DOUBLE( T ) sizeof(T) == 8
+#define IS_FLOAT( T )  sizeof(T) == 4
+#define IS_SHORT( T )  sizeof(T) == 2
+#define IS_CHAR( T )   sizeof(T) == 1
+
+// The vector pointer of the matrix.
+#define L_VECT( suffix ) _x_vec_ ## suffix
+
+#ifndef INLINE
+    #define INLINE __attribute__((always_inline))
+#endif
 
 // Used to include all the possible vectorialized operations.
 //#include <x86intrin.h>
@@ -35,39 +47,85 @@ typedef int64_t size_m;
 #if defined( __AVX512F__ ) || defined( __AVX512ER__ ) || defined( __AVX512BW__ ) || defined( __AVX512CD__ ) || \
     defined( __AVX512PF__ ) || defined( __AVX512VL__ ) || defined( __AVX512DQ__ )
     #include <zmmintrin.h>
-    #define BLOCK       64
-    #define MM_VECT     __m512d
-    #define MM_LOAD     _mm512_load_pd
-    #define MM_STORE    _mm512_store_pd
-    #define MM_ADD      _mm512_add_pd
-    #define MM_SUB      _mm512_sub_pd
-    #define MM_MUL      _mm512_mul_pd
-    #define MM_DIV      _mm512_div_pd
-    #define MM_SET1     _mm512_set1_pd
+    #define BLOCK               64
+    #define MM_VECT(suffix) __m512 ## suffix
+    
+    #define MM_ADD(prefix,bits) MM_ADD ## prefix(bits)
+    #define MM_ADDi(bits) _mm512_add_epi ## bits
+    #define MM_ADDs() _mm512_add_ps
+    #define MM_ADDd() _mm512_add_pd
+    
+    #define MM_SUB(prefix,bits) MM_SUB ## prefix(bits)
+    #define MM_SUBi(bits) _mm512_add_epi ## bits
+    #define MM_SUBs() _mm512_sub_ps
+    #define MM_SUBd() _mm512_sub_pd
+    
+    #define MM_MUL(prefix,bits) MM_MUL ## prefix(bits)
+    #define MM_MULi(bits) _mm512_mullo_epi ## bits
+    #define MM_MULs() _mm512_mul_ps
+    #define MM_MULd() _mm512_mul_pd
+    
+	#define MM_DIV(suffix) _mm512_div_p ## suffix
+	
+    #define MM_SET1(prefix,bits) MM_SET1 ## prefix
+    #define MM_SET1i(bits) _mm512_set1_epi ## bits
+    #define MM_SET1s() _mm512_set1_ps
+    #define MM_SET1d() _mm512_set1_pd
 #elif defined( __AVX__ ) || defined( __AVX2__ )
     #include <immintrin.h>
-    #define BLOCK       32
-    #define MM_VECT     __m256d
-    #define MM_LOAD     _mm256_load_pd
-    #define MM_STORE    _mm256_store_pd
-    #define MM_ADD      _mm256_add_pd
-    #define MM_SUB      _mm256_sub_pd
-    #define MM_MUL      _mm256_mul_pd
-    #define MM_DIV      _mm256_div_pd
-    #define MM_SET1     _mm256_set1_pd
+    #define BLOCK               32
+    #define MM_VECT(suffix) __m256 ## suffix
+    
+    #define MM_ADD(prefix,bits) MM_ADD ## prefix(bits)
+    #define MM_ADDi(bits) _mm256_add_epi ## bits
+    #define MM_ADDs() _mm256_add_ps
+    #define MM_ADDd() _mm256_add_pd
+    
+    #define MM_SUB(prefix,bits) MM_SUB ## prefix(bits)
+    #define MM_SUBi(bits) _mm256_add_epi ## bits
+    #define MM_SUBs() _mm256_sub_ps
+    #define MM_SUBd() _mm256_sub_pd
+    
+    #define MM_MUL(prefix,bits) MM_MUL ## prefix(bits)
+    #define MM_MULi(bits) _mm256_mullo_epi ## bits
+    #define MM_MULs() _mm256_mul_ps
+    #define MM_MULd() _mm256_mul_pd
+    
+	#define MM_DIV(suffix) _mm256_div_p ## suffix
+	
+    #define MM_SET1(prefix,bits) MM_SET1 ## prefix
+    #define MM_SET1i(bits) _mm256_set1_epi ## bits
+    #define MM_SET1s() _mm256_set1_ps
+    #define MM_SET1d() _mm256_set1_pd
 #elif defined( __SSE__ ) || defined( __SSE2__ ) || defined( __SSE3__ ) || defined( __SSE4__ )
     #include <xmmintrin.h>
-    #define BLOCK       16
-    #define MM_VECT     __m128d
-    #define MM_LOAD     _mm_load_pd
-    #define MM_STORE    _mm_store_pd
-    #define MM_ADD      _mm_add_pd
-    #define MM_SUB      _mm_sub_pd
-    #define MM_MUL      _mm_mul_pd
-    #define MM_DIV      _mm_div_pd
-    #define MM_SET1     _mm_set1_pd
+    #define BLOCK               16
+    #define MM_VECT(suffix)     __m128 ## suffix
+    
+    #define MM_ADD(prefix,bits) MM_ADD ## prefix(bits)
+    #define MM_ADDi(bits) _mm_add_epi ## bits
+    #define MM_ADDs() _mm_add_ps
+    #define MM_ADDd() _mm_add_pd
+    
+    #define MM_SUB(prefix,bits) MM_SUB ## prefix(bits)
+    #define MM_SUBi(bits) _mm_add_epi ## bits
+    #define MM_SUBs() _mm_sub_ps
+    #define MM_SUBd() _mm_sub_pd
+    
+    #define MM_MUL(prefix,bits) MM_MUL ## prefix(bits)
+    #define MM_MULi(bits) _mm_mullo_epi ## bits
+    #define MM_MULs() _mm_mul_ps
+    #define MM_MULd() _mm_mul_pd
+    
+	#define MM_DIV(suffix) _mm_div_p ## suffix
+	
+    #define MM_SET1(prefix,bits) MM_SET1 ## prefix
+    #define MM_SET1i(bits) _mm_set1_epi ## bits
+    #define MM_SET1s() _mm_set1_ps
+    #define MM_SET1d() _mm_set1_pd
 #else
-    #define BLOCK       sizeof( T )
+	#define BLOCK               sizeof( T )
+    #define MM_VECT(suffix)     T
     #define NO_VECTORIALIZATION
 #endif
 
