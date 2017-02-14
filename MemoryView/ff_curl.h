@@ -3,7 +3,8 @@
  *  ff_curl.h
  *
  *  Created on: 10 oct 2016
- *  Author: Stefano Ceccotti & Tommaso Catuogno
+ *  Author: Stefano Ceccotti
+ *  Author: Tommaso Catuogno
 */
 
 #ifndef _FF_CURL_H

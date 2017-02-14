@@ -3,7 +3,8 @@
  *  base.h
  *
  *  Created on: 12 dec 2016
- *  Authors: Stefano Ceccotti & Tommaso Catuogno
+ *  Author: Stefano Ceccotti
+ *  Author: Tommaso Catuogno
 */
 
 #ifndef _BASE_H

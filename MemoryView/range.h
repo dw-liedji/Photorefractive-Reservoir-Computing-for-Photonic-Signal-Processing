@@ -3,7 +3,8 @@
  *  range.h
  *
  *  Created on: 14 dec 2016
- *  Author: Stefano Ceccotti & Tommaso Catuogno
+ *  Author: Stefano Ceccotti
+ *  Author: Tommaso Catuogno
 */
 
 #ifndef _RANGE_H

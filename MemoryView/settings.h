@@ -3,7 +3,8 @@
  *  settings.h
  *
  *  Created on: 11 oct 2016
- *  Authors: Stefano Ceccotti & Tommaso Catuogno
+ *  Author: Stefano Ceccotti
+ *  Author: Tommaso Catuogno
 */
 
 #ifndef _SETTINGS_H

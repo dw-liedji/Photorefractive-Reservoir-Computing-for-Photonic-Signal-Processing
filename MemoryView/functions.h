@@ -3,7 +3,8 @@
  *  functions.h
  *
  *  Created on: 13 dec 2016
- *  Authors: Stefano Ceccotti & Tommaso Catuogno
+ *  Author: Stefano Ceccotti
+ *  Author: Tommaso Catuogno
 */
 
 #ifndef _FUNCTIONS_H
