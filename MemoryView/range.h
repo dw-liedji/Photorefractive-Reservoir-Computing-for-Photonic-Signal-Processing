@@ -21,12 +21,21 @@ class Range
         std::pair<size_m, size_m> _boundaries[MAX_DIMENSIONS * 2];
     private:
         size_dim _shapes[MAX_DIMENSIONS];
-        size_dim _size = 0;
+        uint8_t _size = 0;
         size_dim _totalSize;
         bool _sliced = false;
     
     public:
         Range(){}
+        
+        inline void copyFrom( Range in )
+        {
+            memcpy( _boundaries, in._boundaries, MAX_DIMENSIONS * 2 * sizeof( std::pair<size_m, size_m> ) );
+            memcpy( _shapes, in._shapes, MAX_DIMENSIONS * sizeof( size_dim ) );
+            _size = in._size;
+            _totalSize = in._totalSize;
+            _sliced = in._sliced;
+        }
         
         template<bool sliced>
         inline void setRange( const std::vector<size_dim> boundaries )
@@ -49,7 +58,7 @@ class Range
             _sliced = sliced;
         }
         
-        inline void checkSize( const char* fun, const int& line, Range& in )
+        inline void checkSize( const char* fun, const int& line, Range in )
         {
             if(_totalSize != in._totalSize) {
                 printf( "[%s, Line: %d] Different input shapes: (", fun, line ); printSize();
@@ -57,16 +66,17 @@ class Range
                 throw;
             }
             
-            size_dim offset = 0, in_offset = 0;
-            for(size_dim i = 0; i < _size; i++) {
-                if(shape( i+offset ) == 1 && in.shape( i+in_offset ) == 1) { offset++; in_offset++; continue; }
-                if(shape( i+offset ) == 1) { offset++; continue; }
-                if(in.shape( i+in_offset ) == 1) { in_offset++; continue; }
-                if(shape( i+offset ) != in.shape( i+in_offset )) {
+            uint8_t offset = 0, in_offset = 0;
+            while(offset < _size && in_offset < in._size) {
+                if(shape( offset ) == 1 && in.shape( in_offset ) == 1) { offset++; in_offset++; continue; }
+                if(shape( offset ) == 1) { offset++; continue; }
+                if(in.shape( in_offset ) == 1) { in_offset++; continue; }
+                if(shape( offset ) != in.shape( in_offset )) {
                     printf( "[%s, Line: %d] Different input shapes: (", fun, line ); printSize();
                     printf( ") and (" ); in.printSize(); printf( ")\n" );
                     throw;
                 }
+                offset++; in_offset++;
             }
         }
         
@@ -86,7 +96,7 @@ class Range
     private:
         inline void printSize()
         {
-            for(size_dim i = 0; i < _size; i++) {
+            for(uint8_t i = 0; i < _size; i++) {
                 if(i < _size - 1) printf( "%ld ", shape(i) );
                 else printf( "%ld", shape(i) );
             }

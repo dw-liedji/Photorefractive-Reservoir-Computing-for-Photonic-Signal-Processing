@@ -86,18 +86,7 @@ namespace algebra
             }
             
             MemoryView( const MemoryView<T>* other ) /*: Base<T>( other )*/
-            {
-                _size = other->_size;
-                
-                memcpy( _dimensions, other->_dimensions, sizeof( size_m ) * MAX_DIMENSIONS );
-                memcpy( _sizeDimensions, other->_sizeDimensions, sizeof( size_dim ) * MAX_DIMENSIONS );
-                
-                memcpy( _indices, other->_indices, sizeof( size_m ) * MAX_DIMENSIONS );
-                memcpy( _positions, other->_positions, sizeof( size_dim ) * MAX_DIMENSIONS );
-                
-                _data = other->_data;
-                memcpy( &_range, &(other->_range), sizeof( Range) );
-            }
+            { copyFrom( other ); }
         
         private:
             template<class Container>
@@ -174,7 +163,7 @@ namespace algebra
                 return dimensions;
             }
             
-            MV_INLINE void copyFrom( MemoryView* other )
+            MV_INLINE void copyFrom( const MemoryView<T>* other )
             {
                 _size = other->_size;
                 
@@ -185,7 +174,7 @@ namespace algebra
                 memcpy( _positions, other->_positions, sizeof( size_dim ) * MAX_DIMENSIONS );
                 
                 _data = other->_data;
-                _range = other->_range;
+                _range.copyFrom( other->_range );
             }
             
             MV_INLINE size_dim getIndex()

@@ -75,7 +75,7 @@ int main( int argc, char* argv[] )
     MemoryView<V>* D = new MemoryView<V>( { CU, M, R, CO } ); *D = 4;
     MemoryView<V>* curl = new MemoryView<V>( { CU, M, 1, CO } );
     
-    const int Q = 20;
+    const int Q = 1;
     const int Np = stoll( argv[1] );
     
     std::cout << "Start the CURL operations..\n";
@@ -92,7 +92,6 @@ int main( int argc, char* argv[] )
         std::chrono::duration<double> elapsed_seconds = std::chrono::system_clock::now()-start;
         std::cout << "elapsed time: " << elapsed_seconds.count() << "s, N: " << n << "\n";
     }
-#endif
     
     delete H;
     delete E;

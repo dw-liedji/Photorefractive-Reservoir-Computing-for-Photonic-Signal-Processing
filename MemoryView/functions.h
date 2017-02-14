@@ -217,7 +217,8 @@ namespace functors
         #ifndef NO_VECTORIALIZATION
             virtual MV_INLINE MM_VECT()  apply_vect_f( const size_dim& offset ) = 0;
             virtual MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset ) = 0;
-            //virtual MV_INLINE MM_VECT(i) apply_vect_i( const size_dim& offset ) = 0;
+            //virtual MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset ) = 0;
+            //virtual MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset ) = 0;
         #endif
     };
     
@@ -264,7 +265,8 @@ namespace functors
         #ifndef NO_VECTORIALIZATION
             virtual MV_INLINE MM_VECT()  apply_vect_f( const size_dim& offset ) = 0;
             virtual MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset ) = 0;
-            //virtual MV_INLINE MM_VECT(i) apply_vect_i( const size_dim& offset ) = 0;
+            //virtual MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset ) = 0;
+            //virtual MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset ) = 0;
         #endif
     };
     
@@ -316,7 +318,8 @@ namespace functors
         #ifndef NO_VECTORIALIZATION
             virtual MV_INLINE MM_VECT()  apply_vect_f( const size_dim& offset ) = 0;
             virtual MV_INLINE MM_VECT(d) apply_vect_d( const size_dim& offset ) = 0;
-            //virtual MV_INLINE MM_VECT(i) apply_vect_i( const size_dim& offset ) = 0;
+            //virtual MV_INLINE MM_VECT(i) apply_vect_i_16( const size_dim& offset ) = 0;
+            //virtual MV_INLINE MM_VECT(i) apply_vect_i_8( const size_dim& offset ) = 0;
         #endif
     };
     
