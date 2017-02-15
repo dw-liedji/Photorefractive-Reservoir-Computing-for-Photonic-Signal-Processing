@@ -73,7 +73,7 @@ typedef int64_t size_m;
     #define MM_AND_SI     _mm512_and_si512
     #define MM_OR_SI      _mm512_or_si512
     
-	#define MM_DIV(suffix) _mm512_div_p ## suffix
+    #define MM_DIV(suffix) _mm512_div_p ## suffix
 	
     #define MM_SET1(prefix,bits) MM_SET1 ## prefix(bits)
     #define MM_SET1i(bits) _mm512_set1_epi ## bits
@@ -110,7 +110,7 @@ typedef int64_t size_m;
     #define MM_AND_SI     _mm256_and_si256
     #define MM_OR_SI      _mm256_or_si256
     
-	#define MM_DIV(suffix) _mm256_div_p ## suffix
+    #define MM_DIV(suffix) _mm256_div_p ## suffix
 	
     #define MM_SET1(prefix,bits) MM_SET1 ## prefix(bits)
     #define MM_SET1i(bits) _mm256_set1_epi ## bits
@@ -147,7 +147,7 @@ typedef int64_t size_m;
     #define MM_AND_SI     _mm_and_si128
     #define MM_OR_SI      _mm_or_si128
     
-	#define MM_DIV(suffix) _mm_div_p ## suffix
+    #define MM_DIV(suffix) _mm_div_p ## suffix
 	
     #define MM_SET1(prefix,bits) MM_SET1 ## prefix(bits)
     #define MM_SET1i(bits) _mm_set1_epi ## bits
@@ -155,7 +155,7 @@ typedef int64_t size_m;
     #define MM_SET1d()     _mm_set1_pd
     
 #else
-	#define BLOCK               sizeof( T )
+    #define BLOCK               sizeof( T )
     #define MM_VECT(suffix)     T
     #define NO_VECTORIALIZATION
 #endif

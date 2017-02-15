@@ -58,44 +58,44 @@
             _data[_index++] OP R_VALUE;         \
         UPDATE;
     
-	#define COMPUTE_OP_VECTORIALIZED( VECT_OP, R_VALUE, OP, UPDATE, type_suffix, op_suffix ) \
+    #define COMPUTE_OP_VECTORIALIZED( VECT_OP, R_VALUE, OP, UPDATE, type_suffix, op_suffix ) \
         ALIGNMENT( OP, R_VALUE, (fun->update_dim<1>( i )) )                                  \
                                                                                              \
-		const size_dim n    = (N - toAlign) / block;                                         \
-		const size_dim rest = (N - toAlign) % block;                                         \
-		loadVector();                                                                        \
+        const size_dim n    = (N - toAlign) / block;                                         \
+        const size_dim rest = (N - toAlign) % block;                                         \
+        loadVector();                                                                        \
         fun->loadVector();                                                                   \
-		for(i = 0; i < n; i++, _index += block) {                                            \
-			L_VECT(op_suffix)[i] = VECT_OP;                                                  \
-			UPDATE;                                                                          \
-		}                                                                                    \
+        for(i = 0; i < n; i++, _index += block) {                                            \
+            L_VECT(op_suffix)[i] = VECT_OP;                                                  \
+            UPDATE;                                                                          \
+        }                                                                                    \
                                                                                              \
-		LINEAR_SEQUENTIAL_OP( OP, rest, R_VALUE );
-	
-	#define COMPUTE_OP_CONST_VECTORIALIZED( VECT_OP, R_VALUE, OP, type_suffix, op_suffix ) \
-	    ALIGNMENT( OP, R_VALUE,  )                                                         \
-		                                                                                   \
-		const size_dim n    = (N - toAlign) / block;                                       \
-		const size_dim rest = (N - toAlign) % block;                                       \
-		loadVector();                                                                      \
+        LINEAR_SEQUENTIAL_OP( OP, rest, R_VALUE );
+    
+    #define COMPUTE_OP_CONST_VECTORIALIZED( VECT_OP, R_VALUE, OP, type_suffix, op_suffix ) \
+        ALIGNMENT( OP, R_VALUE,  )                                                         \
+                                                                                           \
+        const size_dim n    = (N - toAlign) / block;                                       \
+        const size_dim rest = (N - toAlign) % block;                                       \
+        loadVector();                                                                      \
         T _a_val[sizeof(T)] ALIGN;                                                         \
         for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = value;                         \
         MM_VECT( type_suffix ) x_c_vec = *((MM_VECT( type_suffix )*) _a_val);              \
-		for(i = 0; i < n; i++, _index += block)                                            \
-			L_VECT(op_suffix)[i] = VECT_OP;                                                \
-																			               \
-		LINEAR_SEQUENTIAL_OP( OP, rest, R_VALUE );
+        for(i = 0; i < n; i++, _index += block)                                            \
+            L_VECT(op_suffix)[i] = VECT_OP;                                                \
+                                                                                           \
+        LINEAR_SEQUENTIAL_OP( OP, rest, R_VALUE );
     
-	#define COMPUTE_OP_BINARY_VECTORIALIZED( VECT_OP, OP, type_suffix, op_suffix ) \
-	    ALIGNMENT( OP, in->_data[in->_index++],  )                                 \
-		                                                                           \
-		const size_dim n    = (N - toAlign) / block;                               \
-		const size_dim rest = (N - toAlign) % block;                               \
-		loadVector(); in->loadVector();                                            \
-		for(i = 0; i < n; i++, _index += block, in->_index += block)               \
-			L_VECT(op_suffix)[i] = VECT_OP;                                        \
+    #define COMPUTE_OP_BINARY_VECTORIALIZED( VECT_OP, OP, type_suffix, op_suffix ) \
+        ALIGNMENT( OP, in->_data[in->_index++],  )                                 \
                                                                                    \
-		LINEAR_SEQUENTIAL_OP( OP, rest, in->_data[in->_index++] );
+        const size_dim n    = (N - toAlign) / block;                               \
+        const size_dim rest = (N - toAlign) % block;                               \
+        loadVector(); in->loadVector();                                            \
+        for(i = 0; i < n; i++, _index += block, in->_index += block)               \
+            L_VECT(op_suffix)[i] = VECT_OP;                                        \
+                                                                                   \
+        LINEAR_SEQUENTIAL_OP( OP, rest, in->_data[in->_index++] );
 #endif
 
 
@@ -114,7 +114,7 @@
             LINEAR_SEQUENTIAL_OP( OP, N, fun->apply( i ) );                              \
         }                                                                                \
         else {                                                                           \
-	        /* Vectorialized solution. */                                                \
+            /* Vectorialized solution. */                                                \
             COMPUTE_OP_VECTORIALIZED( VECT_OP, fun->apply( i ),                          \
                                       OP, (fun->update<1,block>()),                      \
                                       type_suffix, op_suffix );                          \
@@ -185,13 +185,12 @@ namespace functors
         MM_VECT(i) dst_odd  = MM_MUL_LO( MM_SR_LI( a, 8 ), MM_SR_LI( b, 8 ) );
         // Repack.
     #if defined( __AVX__ ) || defined( __AVX2__ )
-        // Only faster if have access to VPBROADCASTW.
+        // Faster only if have access to VPBROADCASTW.
         return MM_OR_SI( MM_SL_LI( dst_odd, 8 ), MM_AND_SI( dst_even, MM_SET1(i,16)( 0xFF ) ) );
     #else
         return MM_OR_SI( MM_SL_LI( dst_odd, 8 ), MM_SR_LI( MM_SL_LI( dst_even, 8 ), 8 ) );
     #endif
     }
-    
 
     template<typename Function, class M, typename T>
     class Operation
@@ -211,10 +210,10 @@ namespace functors
             { _m = m; _next = f; }
         
         public:
-    		inline void init()
+            inline void init()
             {  _m->loadIndex(); _next->init(); }
 
-    		inline Range getRange()
+            inline Range getRange()
             { return _m->getRange(); }
             
             inline bool allSubBlocks()
@@ -333,8 +332,8 @@ namespace functors
             /** Returns the alignment of each vector involved in the function. */
             inline bool allAligned()
             { return _m->isAligned(); }
-		    inline bool allAlignable( const size_dim& toAlign )
-		    { return _m->isAlignable() && _m->toAlignment() == toAlign; }
+            inline bool allAlignable( const size_dim& toAlign )
+            { return _m->isAlignable() && _m->toAlignment() == toAlign; }
             
             template<int dim, int offset>
             inline void update()
@@ -426,10 +425,10 @@ namespace functors
             #ifndef NO_VECTORIALIZATION
                 const T _val ALIGN = val;
                 T _a_val[sizeof(T)] ALIGN;
-	            for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = _val;
-	            if(IS_DOUBLE(T))        this->_c_vect_d = *((MM_VECT(d)*) _a_val);
-	            else if(IS_FLOAT(T))    this->_c_vect_s = *((MM_VECT( )*) _a_val);
-	            else /*Short and Char*/ this->_c_vect_i = *((MM_VECT(i)*) _a_val);
+                for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = _val;
+                if(IS_DOUBLE(T))        this->_c_vect_d = *((MM_VECT(d)*) _a_val);
+                else if(IS_FLOAT(T))    this->_c_vect_s = *((MM_VECT( )*) _a_val);
+                else /*Short and Char*/ this->_c_vect_i = *((MM_VECT(i)*) _a_val);
             #endif
             }
             
@@ -510,10 +509,10 @@ namespace functors
             #ifndef NO_VECTORIALIZATION
                 const T _val ALIGN = val;
                 T _a_val[sizeof(T)] ALIGN;
-	            for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = _val;
-	            if(IS_DOUBLE(T))        this->_c_vect_d = *((MM_VECT(d)*) _a_val);
-	            else if(IS_FLOAT(T))    this->_c_vect_s = *((MM_VECT( )*) _a_val);
-	            else /*Short and Char*/ this->_c_vect_i = *((MM_VECT(i)*) _a_val);
+                for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = _val;
+                if(IS_DOUBLE(T))        this->_c_vect_d = *((MM_VECT(d)*) _a_val);
+                else if(IS_FLOAT(T))    this->_c_vect_s = *((MM_VECT( )*) _a_val);
+                else /*Short and Char*/ this->_c_vect_i = *((MM_VECT(i)*) _a_val);
             #endif
             }
             
@@ -594,10 +593,10 @@ namespace functors
             #ifndef NO_VECTORIALIZATION
                 const T _val ALIGN = val;
                 T _a_val[sizeof(T)] ALIGN;
-	            for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = _val;
-	            if(IS_DOUBLE(T))        this->_c_vect_d = *((MM_VECT(d)*) _a_val);
-	            else if(IS_FLOAT(T))    this->_c_vect_s = *((MM_VECT( )*) _a_val);
-	            else /*Short and Char*/ this->_c_vect_i = *((MM_VECT(i)*) _a_val);
+                for(uint64_t i = 0; i < sizeof(T); i++) _a_val[i] = _val;
+                if(IS_DOUBLE(T))        this->_c_vect_d = *((MM_VECT(d)*) _a_val);
+                else if(IS_FLOAT(T))    this->_c_vect_s = *((MM_VECT( )*) _a_val);
+                else /*Short and Char*/ this->_c_vect_i = *((MM_VECT(i)*) _a_val);
             #endif
             }
             
