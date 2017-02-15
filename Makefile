@@ -10,9 +10,9 @@ ifdef EXE
     EXEC=$(EXE)
 endif
 
-NWORKERS=$(DEFAULT_WORKERS)
-ifdef WORKERS
-    NWORKERS=$(WORKERS)
+NTHREADS=$(DEFAULT_THREADS)
+ifdef THREADS
+    NWORKERS=$(THREADS)
 endif
 
 DIM_SIZE=$(DEFAULT_SIZE)
@@ -53,8 +53,8 @@ SRC=parallel_curl
 # Print the usage commands.
 help:
 	@echo "Usage: make run_sequential [EXE]           [SIZE] [ITERATIONS]"
-	@echo "Usage: make run_parallel   [EXE] [WORKERS] [SIZE] [ITERATIONS]"
-	@echo "Default parameters: EXE=$(DEFAULT_EXE), WORKERS=$(DEFAULT_WORKERS), SIZE=$(DEFAULT_SIZE), ITERATIONS=$(DEFAULT_ITERATIONS)"
+	@echo "Usage: make run_parallel   [EXE] [THREADS] [SIZE] [ITERATIONS]"
+	@echo "Default parameters: EXE=$(DEFAULT_EXE), THREADS=$(DEFAULT_THREADS), SIZE=$(DEFAULT_SIZE), ITERATIONS=$(DEFAULT_ITERATIONS)"
 
 # Create the C++ MemoryView .so library.
 lib_parallel: $(SRC).so
@@ -78,5 +78,5 @@ run_parallel:
 	@echo "\n======================"
 	@echo "RUNNING:"
 	@echo "======================\n"
-	$(RUN_CMD) $(PARALLEL_SIMULATOR)/$(EXEC) $(NWORKERS) $(DIM_SIZE) $(N_ITE)
+	$(RUN_CMD) $(PARALLEL_SIMULATOR)/$(EXEC) $(NTHREADS) $(DIM_SIZE) $(N_ITE)
 
