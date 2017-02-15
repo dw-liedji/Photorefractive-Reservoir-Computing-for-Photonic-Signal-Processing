@@ -274,9 +274,9 @@ namespace functors
             /** Returns the alignment of each vector involved in the function. */
             inline bool allAligned()
             { return _m1->isAligned() && _m2->isAligned(); }
-		    inline bool allAlignable( const size_dim& toAlign )
-		    { return _m1->isAlignable() && _m1->toAlignment() == toAlign &&
-		             _m2->isAlignable() && _m2->toAlignment() == toAlign; }
+            inline bool allAlignable( const size_dim& toAlign )
+            { return _m1->isAlignable() && _m1->toAlignment() == toAlign &&
+                     _m2->isAlignable() && _m2->toAlignment() == toAlign; }
             
             template<int dim, int offset>
             inline void update()
