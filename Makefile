@@ -1,53 +1,67 @@
 
-.PHONY: clean run lib test
+# ===== Get the input parameters. ===== #
+EXEC=Simple.py
+ifdef EXE
+    EXEC=$(EXE)
+endif
 
-CC=g++
+NWORKERS=1
+ifdef WORKERS
+    NWORKERS=$(WORKERS)
+endif
+
+DIM_SIZE=300
+ifdef SIZE
+    DIM_SIZE=$(SIZE)
+endif
+
+ITERATIONS=Simple.py
+ifdef N_ITE
+    ITERATIONS=$(N_ITE)
+endif
+# ===================================== #
+
+.PHONY: clean run help
+
+clean:
+	rm -f *.so *.o *~ $(SOURCES)/$(SRC).cpp $(SOURCES)/$(SRC).o $(SOURCES)/$(SRC).so fdtd/$(SRC).so fdtd/*.pyc
+
+CXX=g++
 
 PYTHON=/usr/include/python2.7
 
 LDFLAGS=-I $(PYTHON) -I $$FF_ROOT
-OPT_FLAGS= -O3 -msse2 #-DNO_DEFAULT_MAPPING
-FLAGS=-Wall -std=c++11 -g -pthread -fopenmp -fPIC
+OPT_FLAGS= -O3 -msse2 -DNO_DEFAULT_MAPPING -finline-functions
+FLAGS=-Wall -std=c++11 -pthread -fopenmp -fPIC
 
-CFLAGS= $(FLAGS) -fno-strict-aliasing -DNDEBUG -fwrapv -fPIC -c
+CFLAGS= $(FLAGS) -fno-strict-aliasing -DNDEBUG -fwrapv -fPIC -c -lm
 LFLAGS= $(FLAGS) -shared -Wl,-Bsymbolic-functions -Wl,-z,relro -fno-strict-aliasing -DNDEBUG -fwrapv \
-        -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security
+        -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -lm
 
+SOURCES=./MemoryView
 RUN_CMD=python
-EXE=script.py
 
 SRC=parallel_curl
 
-THREADS=2
-TEST_EXE=Test
-clean:
-	rm -f *.so *.o *~ $(TEST_EXE) $(SRC).cpp
+# Print the usage command.
+help:
+	@echo "Usage: make run [EXE] [WORKERS] [SIZE] [N_ITE]"
 
-# Create the C++ .so library.
+# Create the C++ MemoryView .so library.
 lib: $(SRC).so
 
 $(SRC).so: $(SRC).o
-	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(LFLAGS) $(SRC).o -o $(SRC).so
+	$(CXX) $(OPT_FLAGS) $(LDFLAGS) $(LFLAGS) $(SOURCES)/$(SRC).o -o $(SOURCES)/$(SRC).so
 $(SRC).o: $(SRC).cpp
-	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(CFLAGS) $(SRC).cpp -o $(SRC).o
-$(SRC).cpp: $(SRC).pyx
-	cython --cplus $(SRC).pyx
-
-
-
-# Compile and run the C++ test file.
-test: $(TEST_EXE)
-	./$(TEST_EXE) $(THREADS)
-
-$(TEST_EXE): $(TEST_EXE).o
-	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(FLAGS) $(TEST_EXE).o -o $(TEST_EXE)
-$(TEST_EXE).o: $(TEST_EXE).cpp
-	$(CC) $(OPT_FLAGS) $(LDFLAGS) $(FLAGS) -c $(TEST_EXE).cpp
+	$(CXX) $(OPT_FLAGS) $(LDFLAGS) $(CFLAGS) $(SOURCES)/$(SRC).cpp -o $(SOURCES)/$(SRC).o
+$(SRC).cpp: $(SOURCES)/$(SRC).pyx
+	python $$PYTHON_LIBS/cython.py --cplus $(SOURCES)/$(SRC).pyx
 
 run:
-	make clean
 	make lib
-	@echo -e "\n======================"
+	cp $(SOURCES)/$(SRC).so fdtd/
+	@echo "\n======================"
 	@echo "RUNNING:"
-	@echo -e "======================\n"
-	$(RUN_CMD) $(EXE)
+	@echo "======================\n"
+	$(RUN_CMD) $(EXEC) $(NWORKERS) $(DIM_SIZE) $(ITERATIONS)
+

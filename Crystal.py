@@ -1,28 +1,42 @@
 
-from timeit import default_timer as time
-
 # coding: utf-8
 
 # # Modules
 
 # In[1]:
 
+import sys
+import os
+LIBS_PATH = os.environ.get('PYTHON_LIBS')
+if LIBS_PATH is not None:
+    sys.path.append( LIBS_PATH )
+
+from timeit import default_timer as time
 from fdtd import *
 import numpy as np
-#get_ipython().magic(u'matplotlib inline')
+from fdtd import plotter as plt
 
 
 # # Initialization
 
-CU = 300
-M  = 300
-R  = 300
+# Assign the number of threads.
+Np = 1 if len( sys.argv ) <= 1 else int( sys.argv[1] )
+# Assign the size of the matrix.
+SIZE = 300 if len( sys.argv ) <= 2 else int( sys.argv[2] )
+# Assign the number of iterations.
+Q = 20 if len( sys.argv ) <= 3 else int( sys.argv[3] )
+
+CU = SIZE
+M  = SIZE
+R  = SIZE
 CO = 3
 
-T  = 20
-
+print "Starting Crystal.py with parameters:"
 print "Matrix: ",CU,"x",M,"x",R,"x",CO
-print "T = ",T
+print "Q = ",Q
+print "Threads = ",Np
+
+print "You can invoke it with: python Crystal.py [THREADS] [SIZE] [ITERATIONS]"
 
 # ## Grid
 
@@ -40,13 +54,12 @@ grd = grid.Grid((CU,M,R,CO), pml_thickness=10)
 # In[3]:
 
 # We create two sources this time:
-Q = 10
 
 # In[4]:
 
-lft = source.Oblique(grd, (CU/2,50), size=CU, tan=0, period=20, phi=0, I=1e4, 
+lft = source.Oblique(grd, (CU/2,100), size=CU/2, tan=0, period=20, phi=0, I=1e4, 
                      pulselength=Q, sigma=10, r=4, mode='TE')
-top = source.Oblique(grd, (CU/2,50), size=CU/2, tan=1e20, period=20, phi=0, I=1e4, 
+top = source.Oblique(grd, (CU/2,100), size=CU/2, tan=1e20, period=20, phi=0, I=1e4, 
                      pulselength=Q, sigma=10, r=4, mode='TE')
 
 
@@ -81,21 +94,14 @@ grd.plot()
 
 # # Run
 
-# We run the propagation of the light for T timesteps.
+# We run the propagation of the light for Q timesteps.
 
 # In[8]:
-Np = 24
-for n in xrange(1,Np+1):
-  t1=time()
-  grd.run_fdtd(T,n)
-  print time()-t1
+t1=time()
+grd.run_fdtd( Q, Np )
+print time()-t1
 
 # # Visualize [1]
-
-# In[9]:
-
-from fdtd import plotter as plt
-
 
 # We choose to visualize the generated electrons in the crystal.
 
