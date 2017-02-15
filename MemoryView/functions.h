@@ -59,7 +59,7 @@
         UPDATE;
     
 	#define COMPUTE_OP_VECTORIALIZED( VECT_OP, R_VALUE, OP, UPDATE, type_suffix, op_suffix ) \
-        ALIGNMENT( OP, R_VALUE, (fun->update( 1, i )) )                                      \
+        ALIGNMENT( OP, R_VALUE, (fun->update_dim<1>( i )) )                                  \
                                                                                              \
 		const size_dim n    = (N - toAlign) / block;                                         \
 		const size_dim rest = (N - toAlign) % block;                                         \
@@ -168,9 +168,11 @@ namespace functors
     */
     static inline MM_VECT(i) _mm_mul_pi16( MM_VECT(i) a, MM_VECT(i) b )
     {
-        MM_VECT(i) mm_low  = MM_MUL_LO( a, b );
-        MM_VECT(i) mm_high = MM_MUL_HI( a, b );
-        return MM_ADD(i,16)( mm_low, mm_high );
+        const MM_VECT(i) vhi = MM_MUL_HI( a, b );
+        const MM_VECT(i) vlo = MM_MUL_LO( a, b );
+        const MM_VECT(i) ulo = MM_UNPACK_LO( vlo, vhi );
+        const MM_VECT(i) uhi = MM_UNPACK_LO( vhi, vlo );
+        return MM_MAX( ulo, uhi );
     }
     
     /**
@@ -189,6 +191,8 @@ namespace functors
         return MM_OR_SI( MM_SL_LI( dst_odd, 8 ), MM_SR_LI( MM_SL_LI( dst_even, 8 ), 8 ) );
     #endif
     }
+    
+    // TODO create update_dim<dim>(offset) to it in line 62 of this file.
 
     template<typename Function, class M, typename T>
     class Operation
@@ -231,6 +235,10 @@ namespace functors
             template<int offset>
             inline void update( const int &dim )
             { _next->update<offset>( dim ); _m->update<offset>( dim ); }
+            
+            template<int dim>
+            inline void update_dim( const int &offset )
+            { _next->update_dim<dim>( offset ); _m->update_dim<dim>( offset ); }
             
             inline void update( const int &dim, const int& offset )
             { _next->update( dim, offset ); _m->update( dim, offset ); }
@@ -279,6 +287,10 @@ namespace functors
             template<int offset>
             inline void update( const int &dim )
             { _m1->update<offset>( dim ); _m2->update<offset>( dim ); }
+            
+            template<int dim>
+            inline void update_dim( const int &offset )
+            { _m1->update_dim<dim>( offset ); _m2->update_dim<dim>( offset ); }
             
             inline void update( const int &dim, const int& offset )
             { _m1->update( dim, offset ); _m2->update( dim, offset ); }
@@ -332,6 +344,10 @@ namespace functors
             template<int offset>
             inline void update( const int &dim )
             { _m->update<offset>( dim ); }
+            
+            template<int dim>
+            inline void update_dim( const int &offset )
+            { _m->update_dim<dim>( offset ); }
             
             inline void update( const int &dim, const int& offset )
             { _m->update( dim, offset ); }
