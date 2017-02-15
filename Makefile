@@ -43,8 +43,8 @@ CFLAGS= $(FLAGS) -fno-strict-aliasing -DNDEBUG -fwrapv -fPIC -c -lm
 LFLAGS= $(FLAGS) -shared -Wl,-Bsymbolic-functions -Wl,-z,relro -fno-strict-aliasing -DNDEBUG -fwrapv \
         -D_FORTIFY_SOURCE=2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -lm
 
-SEQUENTIAL_SIMULATOR="Sequential Optical Simulator"
-PARALLEL_SIMULATOR="Parallel Optical Simulator"
+SEQUENTIAL_SIMULATOR="Sequential Simulator"
+PARALLEL_SIMULATOR="Parallel Simulator"
 SOURCES=./MemoryView
 RUN_CMD=python
 
