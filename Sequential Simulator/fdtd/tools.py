@@ -116,15 +116,38 @@ def savy(F): # Symmetric Avarage of a field in the y direction
 ## SPECIFIC E-FIELD FUNCTIONS
 def curl_E(E): # Transforms an E field into an H field by performing a curl
     ret = np.zeros(E.shape)
-    ret[:,:-1,0] = E[:,1:,2]-E[:,:-1,2]
-    ret[:,-1,0]  = -E[:,-1,2]
-    ret[:-1,:,1] = -E[1:,:,2]+E[:-1,:,2]
-    ret[-1,:,1]  = E[-1,:,2]
-    ret[:-1,:,2] = E[1:,:,1]-E[:-1,:,1]
-    ret[-1,:,2]  = -E[-1,:,1]
-    ret[:,:-1,2]-= E[:,1:,0]-E[:,:-1,0]
-    ret[:,-1,2] -= -E[:,-1,0]
+    ret[:,:-1,0]  = E[:,1:,2]-E[:,:-1,2]
+    ret[:,-1,0]   = -E[:,-1,2]
+    ret[:-1,:,1]  = -E[1:,:,2]+E[:-1,:,2]
+    ret[-1,:,1]   = E[-1,:,2]
+    ret[:-1,:,2]  = E[1:,:,1]-E[:-1,:,1]
+    ret[-1,:,2]   = -E[-1,:,1]
+    ret[:,:-1,2] -= E[:,1:,0]-E[:,:-1,0]
+    ret[:,-1,2]  -= -E[:,-1,0]
     return ret
+
+def curl_E_3D( E ):
+    ret = np.zeros(E.shape)
+    
+    # x - component
+    ret[:,:-1,:,0] += (E[:,1:,:,2] - E[:,:-1,:,2])
+    ret[:, -1,:,0] -=  E[:,-1,:,2]
+    ret[:,:,:-1,0] -= (E[:,:,1:,1] - E[:,:,:-1,1])
+    ret[:,:, -1,0] +=  E[:,:,-1,1]
+
+    # y-component
+    ret[:,:,:-1,1] += (E[:,:,1:,0] - E[:,:,:-1,0])
+    ret[:,:, -1,1] -=  E[:,:,-1,0]
+    ret[:-1,:,:,1] -= (E[1:,:,:,2] - E[:-1,:,:,2])
+    ret[ -1,:,:,1] +=  E[-1,:,:,2]
+    
+    # z - component
+    ret[:-1,:,:,2] += (E[1:,:,:,1] - E[:-1,:,:,1])
+    ret[ -1,:,:,2] -=  E[-1,:,:,1]
+    ret[:,:-1,:,2] -= (E[:,1:,:,0] - E[:,:-1,:,0])
+    ret[:, -1,:,2] +=  E[:,-1,:,0]
+    
+    return ret[:,:,1,:]
 
 def E_Ez(E): # Interpolates all the values to the Ez position.
     ret = E.copy()
@@ -147,15 +170,38 @@ E_Hx = E_Ey
 ## SPECIFIC H-FIELD FUNCTIONS
 def curl_H(H): # Transforms an H field into an E field by performing a curl
     ret = np.zeros(H.shape)
-    ret[:,1:,0] = H[:,1:,2]-H[:,:-1,2]
-    ret[:,0,0] = H[:,0,2]
-    ret[1:,:,1] = -(H[1:,:,2]-H[:-1,:,2])
-    ret[0,:,1] = -H[0,:,2]
-    ret[1:,:,2] = H[1:,:,1]-H[:-1,:,1]
-    ret[0,:,2] = H[0,:,1]
+    ret[:,1:,0]  = H[:,1:,2]-H[:,:-1,2]
+    ret[:,0,0]   = H[:,0,2]
+    ret[1:,:,1]  = H[:-1,:,2]-H[1:,:,2]
+    ret[0,:,1]   = -H[0,:,2]
+    ret[1:,:,2]  = H[1:,:,1]-H[:-1,:,1]
+    ret[0,:,2]   = H[0,:,1]
     ret[:,1:,2] -= H[:,1:,0]-H[:,:-1,0]
-    ret[:,0,2] -= H[:,0,0]
+    ret[:,0,2]  -= H[:,0,0]
     return ret
+
+def curl_H_3D( H ):
+    ret = np.zeros(H.shape)
+    
+    # x - component
+    ret[:,1:,:,0] += (H[:,1:,:,2] - H[:,:-1,:,2])
+    ret[:,0 ,:,0] +=  H[:,0 ,:,2]
+    ret[:,:,1:,0] -= (H[:,:,1:,1] - H[:,:,:-1,1])
+    ret[:,:,0 ,0] -=  H[:,:,0 ,1]
+    
+    # y - component
+    ret[:,:,1:,1] += (H[:,:,1:,0] - H[:,:,:-1,0])
+    ret[:,:,0 ,1] +=  H[:,:,0 ,0]
+    ret[1:,:,:,1] -= (H[1:,:,:,2] - H[:-1,:,:,2])
+    ret[0 ,:,:,1] -=  H[0,:,:,2]
+    
+    # z - component
+    ret[1:,:,:,2] += (H[1:,:,:,1] - H[:-1,:,:,1])
+    ret[0 ,:,:,2] +=  H[0 ,:,:,1]
+    ret[:,1:,:,2] -= (H[:,1:,:,0] - H[:,:-1,:,0])
+    ret[:,0 ,:,2] -=  H[:,0 ,:,0]
+    
+    return ret[:,:,1,:]
 
 def H_Hz(H): # Interpolates all the values to the Hz position.
     ret = H.copy()
