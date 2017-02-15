@@ -1,7 +1,7 @@
 
 # ===== Get the input parameters. ===== #
 DEFAULT_EXE=Simple.py
-DEFAULT_WORKERS=1
+DEFAULT_THREADS=1
 DEFAULT_SIZE=300
 DEFAULT_ITERATIONS=20
 
