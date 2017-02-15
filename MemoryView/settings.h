@@ -65,10 +65,13 @@ typedef int64_t size_m;
     #define MM_MUL_LO     _mm512_mullo_epi16
     #define MM_MUL_HI     _mm512_mulhi_epi16
     
-    #define MM_SR_LI  _mm512_srli_epi16
-    #define MM_SL_LI  _mm512_slli_epi16
-    #define MM_AND_SI _mm512_and_si512
-    #define MM_OR_SI  _mm512_or_si512
+    #define MM_MAX        _mm512_max_epi16
+    #define MM_UNPACK_LO  _mm512_unpacklo_epi16
+    #define MM_UNPACK_HI  _mm512_unpackhi_epi16
+    #define MM_SR_LI      _mm512_srli_epi16
+    #define MM_SL_LI      _mm512_slli_epi16
+    #define MM_AND_SI     _mm512_and_si512
+    #define MM_OR_SI      _mm512_or_si512
     
 	#define MM_DIV(suffix) _mm512_div_p ## suffix
 	
@@ -99,10 +102,13 @@ typedef int64_t size_m;
     #define MM_MUL_LO     _mm256_mullo_epi16
     #define MM_MUL_HI     _mm256_mulhi_epi16
     
-    #define MM_SR_LI  _mm256_srli_epi16
-    #define MM_SL_LI  _mm256_slli_epi16
-    #define MM_AND_SI _mm256_and_si256
-    #define MM_OR_SI  _mm256_or_si256
+    #define MM_MAX        _mm256_max_epi16
+    #define MM_UNPACK_LO  _mm256_unpacklo_epi16
+    #define MM_UNPACK_HI  _mm256_unpackhi_epi16
+    #define MM_SR_LI      _mm256_srli_epi16
+    #define MM_SL_LI      _mm256_slli_epi16
+    #define MM_AND_SI     _mm256_and_si256
+    #define MM_OR_SI      _mm256_or_si256
     
 	#define MM_DIV(suffix) _mm256_div_p ## suffix
 	
@@ -133,10 +139,13 @@ typedef int64_t size_m;
     #define MM_MUL_LO     _mm_mullo_epi16
     #define MM_MUL_HI     _mm_mulhi_epi16
     
-    #define MM_SR_LI  _mm_srli_epi16
-    #define MM_SL_LI  _mm_slli_epi16
-    #define MM_AND_SI _mm_and_si128
-    #define MM_OR_SI  _mm_or_si128
+    #define MM_MAX        _mm_max_epi16
+    #define MM_UNPACK_LO  _mm_unpacklo_epi16
+    #define MM_UNPACK_HI  _mm_unpackhi_epi16
+    #define MM_SR_LI      _mm_srli_epi16
+    #define MM_SL_LI      _mm_slli_epi16
+    #define MM_AND_SI     _mm_and_si128
+    #define MM_OR_SI      _mm_or_si128
     
 	#define MM_DIV(suffix) _mm_div_p ## suffix
 	

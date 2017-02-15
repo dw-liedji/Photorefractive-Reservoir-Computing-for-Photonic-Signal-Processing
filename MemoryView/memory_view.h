@@ -193,9 +193,9 @@ namespace algebra
         #ifndef NO_VECTORIALIZATION
             MV_INLINE void loadVector()
             {
-                if(IS_DOUBLE( T )) _x_vec_d = (MM_VECT(d)*) (_data + _index);
-                else if(IS_FLOAT( T )) _x_vec_s = (MM_VECT()*) (_data + _index);
-                else _x_vec_i = (MM_VECT(i)*) (_data + _index);
+                if(IS_DOUBLE( T ))     _x_vec_d = (MM_VECT(d)*) (_data + _index);
+                else if(IS_FLOAT( T )) _x_vec_s = (MM_VECT( )*) (_data + _index);
+                else                   _x_vec_i = (MM_VECT(i)*) (_data + _index);
             }
         #endif
             
@@ -220,6 +220,16 @@ namespace algebra
             
             template<int offset>
             MV_INLINE void update( const int dim )
+            {
+                switch( dim ) {
+                    case( 1 ): _index += offset; break;
+                    case( 2 ): _index += _sizeDimensions[_size-2]; break;
+                    default  : _index = _positions[_size-dim] += _sizeDimensions[_size-dim]; break;
+                }
+            }
+            
+            template<int dim>
+            MV_INLINE void update_dim( const int offset )
             {
                 switch( dim ) {
                     case( 1 ): _index += offset; break;
