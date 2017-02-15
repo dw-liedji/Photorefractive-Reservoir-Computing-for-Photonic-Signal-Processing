@@ -8,8 +8,7 @@
 import sys
 import os
 LIBS_PATH = os.environ.get('PYTHON_LIBS')
-if LIBS_PATH is not None:
-    sys.path.append( LIBS_PATH )
+if LIBS_PATH is not None: sys.path.append( LIBS_PATH )
 
 from timeit import default_timer as time
 from fdtd import *
@@ -44,7 +43,7 @@ print "You can invoke it with: python Simple.py [THREADS] [SIZE] [ITERATIONS]"
 
 # In[2]:
 tt=time()
-grd = grid.Grid((CU,M,R,CO), Np, pml_thickness=10)
+grd = grid.Grid( (CU,M,R,CO), Np, pml_thickness=10 )
 
 
 # ## Source

@@ -17,7 +17,7 @@ from constants import c #[m/s] speed of light
 ## GRID CLASS ##
 ################
 class Grid():
-    def __init__(self, shape, Np, wl=632.8e-9, Nwl=10, eps=1., pml_thickness = 10, periodic_boundaries = False):
+    def __init__(self, shape, wl=632.8e-9, Nwl=10, eps=1., pml_thickness = 10, periodic_boundaries = False):
         self.sc = 0.7 # Courant Number
         self.du = wl/Nwl # Grid spacing
         self.wl = wl
@@ -55,17 +55,15 @@ class Grid():
         
         self.periodic_boundaries = periodic_boundaries
         
-        init( Np )
-        
-    def run_fdtd(self, steps, N ):
+    def run_fdtd(self, steps ):
         for q in xrange(steps):
-            self.step_fdtd(N)
+            self.step_fdtd()
 
-    def step_fdtd(self, N):
-        self.update_E(N)
+    def step_fdtd(self):
+        self.update_E()
         for source in self.sources:
             source.E(self.q, self.E)
-        self.update_H(N)
+        self.update_H()
         for source in self.sources:
             source.H(self.q, self.H)
         self.q += 1
@@ -73,10 +71,8 @@ class Grid():
     def update_E(self):
         self.pml.update_phi_E()    
         
-        #curl_H = tls.curl_H(self.H)
-        #self.E += self.sc * self.inv_eps * curl_H
-        
-        curl_E( self.E_3D, self.H_3D, self.inv_eps_3D, self.curl, self.sc, N )
+        curl_H = tls.curl_H(self.H)
+        self.E += self.sc * self.inv_eps * curl_H
 
         for obj in self.objects:
             obj.update_E(curl_H[obj.locX, obj.locY])
@@ -89,13 +85,11 @@ class Grid():
         
         self.pml.update_E()
                 
-    def update_H(self, N):
+    def update_H(self):
         self.pml.update_phi_H()
 
-        #self.curl = tls.curl_E_3D(self.E_3D)
-        #self.H -= self.sc * self.inv_mu * self.curl
-
-        curl_E( self.E_3D, self.H_3D, self.inv_mu_3D, self.curl, self.sc, N )
+        self.curl = tls.curl_E_3D(self.E_3D)
+        self.H -= self.sc * self.inv_mu * self.curl
 
         for obj in self.objects:
             obj.update_H(self.curl[obj.locX, obj.locY])

@@ -8,8 +8,7 @@
 import sys
 import os
 LIBS_PATH = os.environ.get('PYTHON_LIBS')
-if LIBS_PATH is not None:
-    sys.path.append( LIBS_PATH )
+if LIBS_PATH is not None: sys.path.append( LIBS_PATH )
 
 from timeit import default_timer as time
 from fdtd import *
@@ -19,12 +18,10 @@ from fdtd import plotter as plt
 
 # # Initialization
 
-# Assign the number of threads.
-Np = 1 if len( sys.argv ) <= 1 else int( sys.argv[1] )
 # Assign the size of the matrix.
-SIZE = 300 if len( sys.argv ) <= 2 else int( sys.argv[2] )
+SIZE = 300 if len( sys.argv ) <= 1 else int( sys.argv[1] )
 # Assign the number of iterations.
-Q = 20 if len( sys.argv ) <= 3 else int( sys.argv[3] )
+Q = 20 if len( sys.argv ) <= 2 else int( sys.argv[2] )
 
 CU = SIZE
 M  = SIZE
@@ -34,9 +31,8 @@ CO = 3
 print "Starting Crystal.py with parameters:"
 print "Matrix: ",CU,"x",M,"x",R,"x",CO
 print "Q = ",Q
-print "Threads = ",Np
 
-print "You can invoke it with: python Crystal.py [THREADS] [SIZE] [ITERATIONS]"
+print "You can invoke it with: python Crystal.py [SIZE] [ITERATIONS]"
 
 # ## Grid
 
@@ -45,7 +41,7 @@ print "You can invoke it with: python Crystal.py [THREADS] [SIZE] [ITERATIONS]"
 # In[2]:
 
 tt=time()
-grd = grid.Grid((CU,M,R,CO), pml_thickness=10)
+grd = grid.Grid( (CU,M,R,CO), pml_thickness=10 )
 
 # ## Source
 
@@ -98,7 +94,7 @@ grd.plot()
 
 # In[8]:
 t1=time()
-grd.run_fdtd( Q, Np )
+grd.run_fdtd( Q )
 print time()-t1
 
 # # Visualize [1]
