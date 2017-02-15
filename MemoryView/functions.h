@@ -192,7 +192,6 @@ namespace functors
     #endif
     }
     
-    // TODO create update_dim<dim>(offset) to it in line 62 of this file.
 
     template<typename Function, class M, typename T>
     class Operation
