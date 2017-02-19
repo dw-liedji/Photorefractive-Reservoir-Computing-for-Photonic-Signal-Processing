@@ -39,7 +39,7 @@ namespace algebra
             size_dim _index;
         #ifndef NO_VECTORIALIZATION
             MM_VECT(i)* _x_vec_i;
-            MM_VECT()*  _x_vec_s;
+            MM_VECT( )* _x_vec_s;
             MM_VECT(d)* _x_vec_d;
         #endif
         
