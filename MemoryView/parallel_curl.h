@@ -40,12 +40,13 @@ class ParallelCurl
                 const size_m start = (x * c) + offset;
                 const size_m stop  = last ? CU : (((x+1) * c+1) + offset);
                 
-                curl_E( _E->slice( { start, stop, 0, M, 0, R, 0, CO } ),
-                        _H->slice( { start, stop, 0, M, 0, R, 0, CO } ),
-                        _D->slice( { start, stop, 0, M, 0, R, 0, CO } ),
-                        _C->slice( { start, stop, 0, M, 0, CO } ),
+                curl_E( _E->slice( { start, stop } ), _H->slice( { start, stop } ),
+                        _D->slice( { start, stop } ), _C->slice( { start, stop } ),
                         sc, last );
             }
+            
+            free( _E ); free( _H );
+            free( _D ); free( _C );
         }
         
     private:
@@ -115,12 +116,13 @@ class ParallelCurl
                 const size_m start = (first) ? (x * c) : ((x * c) - 1) + offset;
                 const size_m stop  = (x == Np-1) ? CU : ((x+1)*c + offset);
                 
-                curl_H( _H->slice( { start, stop, 0, M, 0, R, 0, CO } ),
-                        _E->slice( { start, stop, 0, M, 0, R, 0, CO } ),
-                        _D->slice( { start, stop, 0, M, 0, R, 0, CO } ),
-                        _C->slice( { start, stop, 0, M, 0, CO } ),
+                curl_H( _E->slice( { start, stop } ), _H->slice( { start, stop } ),
+                        _D->slice( { start, stop } ), _C->slice( { start, stop } ),
                         sc, first );
             }
+            
+            free( _E ); free( _H );
+            free( _D ); free( _C );
         }
         
     private:
