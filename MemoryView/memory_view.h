@@ -133,15 +133,6 @@ namespace algebra
                 return _tmp;
             }
             
-            // Used only by Cython.
-            MemoryView<T>* slice( const size_m fCu, const size_m tCu, const size_m fM, const size_m tM, const size_m fR, const size_m tR, const size_m fCo, const size_m tCo )
-            {
-                MemoryView<T>* _tmp = new MemoryView<T>( _data, _dimensions, _size );
-                _tmp->setRange<true>( { fCu, tCu, fM, tM, fR, tR, fCo, tCo } );
-                
-                return _tmp;
-            }
-            
             inline Range getRange()
             { return _range; }
 
