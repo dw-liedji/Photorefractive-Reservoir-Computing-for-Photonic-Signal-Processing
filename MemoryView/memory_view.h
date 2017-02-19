@@ -34,193 +34,70 @@ using namespace functors;
 namespace algebra
 {
     template<typename T>
-    class MemoryView /*: public Base<T>*/
+    class MemoryView : public Base<MemoryView<T>,T>
     {
         public:
-            T* _data = NULL;
-            size_dim _index;
+            using Base<MemoryView<T>,T>::_data;
+            using Base<MemoryView<T>,T>::_index;
         #ifndef NO_VECTORIALIZATION
-            MM_VECT(i)* _x_vec_i;
-            MM_VECT()*  _x_vec_s;
-            MM_VECT(d)* _x_vec_d;
+            using Base<MemoryView<T>,T>::_x_vec_i;
+            using Base<MemoryView<T>,T>::_x_vec_s;
+            using Base<MemoryView<T>,T>::_x_vec_d;
         #endif
-        
-        private:
-            Range _range;
+            using Base<MemoryView<T>,T>::_range;
             
-            size_m   _dimensions[MAX_DIMENSIONS];
-            size_dim _sizeDimensions[MAX_DIMENSIONS];
+            using Base<MemoryView<T>,T>::_dimensions;
+            using Base<MemoryView<T>,T>::_sizeDimensions;
             
-            size_m   _indices[MAX_DIMENSIONS];
-            size_dim _positions[MAX_DIMENSIONS];
+            using Base<MemoryView<T>,T>::_indices;
+            using Base<MemoryView<T>,T>::_positions;
             
-            size_dim _size;
+            using Base<MemoryView<T>,T>::_size;
             
-            //size_dim block = BLOCK / sizeof( T );
-        #ifdef NO_VECTORIALIZATION
-            bool VECTORIALIZATION = false;
-        #else
-            bool VECTORIALIZATION = true;
-        #endif
+            using Base<MemoryView<T>,T>::VECTORIALIZATION;
         
         public:
-            MemoryView() /*: Base<T>()*/ {}
+            MemoryView() : Base<MemoryView<T>,T>() {}
             
-            MemoryView( const std::vector<size_dim> dimensions ) /*: Base<T>( dimensions )*/
-            {
-                build<std::vector<size_dim>>( dimensions );
-                _data = (T*) calloc( _range.getTotalSize(), sizeof( T ) );
-                //_data = (T*) _mm_malloc( total_size * sizeof( T ), BLOCK );
-            }
+            MemoryView( const std::vector<size_dim> dimensions ) : Base<MemoryView<T>,T>( dimensions )
+            {}
             
-            MemoryView( T* data, const std::vector<size_dim> dimensions ) /*: Base<T>( data, dimensions )*/
-            {
-                build<std::vector<size_dim>>( dimensions );
-                _data = data;
-            }
+            MemoryView( T* data, const std::vector<size_dim> dimensions ) : Base<MemoryView<T>,T>( data, dimensions )
+            {}
             
-            MemoryView( T* data, const size_dim* dimensions, const int& size ) /*: Base<T>( data, dimensions, size )*/
-            {
-                build<std::vector<size_dim>>( std::vector<size_dim>( dimensions, dimensions + size ) );
-                _data = data;
-            }
+            MemoryView( T* data, const size_dim* dimensions, const int& size ) : Base<MemoryView<T>,T>( data, dimensions, size )
+            {}
             
-            MemoryView( const MemoryView<T>* other ) /*: Base<T>( other )*/
-            { copyFrom( other ); }
-        
-        private:
-            template<class Container>
-            void build( const Container& container )
-            {
-                _size = container.size();
-                if(_size > MAX_DIMENSIONS) {
-                    fprintf( stderr, "Sequence too large; cannot be greater than %d\n", MAX_DIMENSIONS );
-                    throw;
-                }
-                
-                std::vector<size_dim> boundaries( _size * 2 );
-                
-                size_dim i = 0, j = 0, total_size = 1;
-                for(auto iterator = container.begin(); iterator != container.end(); ++iterator) {
-                    size_dim elem = *iterator;
-                    total_size *= elem;
-                    _dimensions[j++] = elem;
-                    boundaries[i++] = 0;
-                    boundaries[i++] = elem;
-                }
-                
-                for(size_dim i = _size - 1; i >= 0; i--)
-                    _sizeDimensions[i] = (i == _size-1) ? 1 : (_sizeDimensions[i+1] * _dimensions[i+1]);
-                _range.setRange<false>( boundaries );
-            }
-            
-            
+            MemoryView( const MemoryView<T>* other ) : Base<MemoryView<T>,T>( other )
+            {}
             
             // ======== UTILITY METHODS ======== //
             
-        public:
-            T* data() { return _data; }
-            
-            template<bool sliced>
-            inline void setRange( const std::vector<size_dim> boundaries )
-            { _range.setRange<sliced>( boundaries ); }
-            
-            MemoryView<T>* slice( const std::vector<size_dim> boundaries )
-            {
-                MemoryView<T>* _tmp = new MemoryView<T>( _data, _dimensions, _size );
-                _tmp->setRange<true>( boundaries );
-                
-                return _tmp;
-            }
-            
-            inline Range getRange()
-            { return _range; }
-
-            inline T get( const std::vector<size_dim> positions )
-            {
-                size_dim i = 0, _pos = 0;
-                for(size_dim pos : positions)
-                    _pos += (_sizeDimensions[i++] * pos);
-                
-                return _data[_pos];
-            }
-            
-            inline std::vector<size_dim> getDimensions()
-            {
-                std::vector<size_dim> dimensions( _size );
-                for(size_dim i = 0; i < _size; i++)
-                    dimensions[i] = _range.shape( i );
-                
-                return dimensions;
-            }
-            
-            MV_INLINE void copyFrom( const MemoryView<T>* other )
-            {
-                _size = other->_size;
-                
-                memcpy( _dimensions, other->_dimensions, sizeof( size_m ) * MAX_DIMENSIONS );
-                memcpy( _sizeDimensions, other->_sizeDimensions, sizeof( size_dim ) * MAX_DIMENSIONS );
-                
-                memcpy( _indices, other->_indices, sizeof( size_m ) * MAX_DIMENSIONS );
-                memcpy( _positions, other->_positions, sizeof( size_dim ) * MAX_DIMENSIONS );
-                
-                _data = other->_data;
-                _range.copyFrom( other->_range );
-            }
-            
-            MV_INLINE size_dim getIndex()
-            { return _index; }
-            
-            MV_INLINE void loadIndex()
-            {
-                _index = 0;
-                for(size_dim i = 0; i < _size; i++)
-                    _index += (_sizeDimensions[i] * _range._boundaries[i].first);
-                
-                for(size_dim i = 0; i < _size-2; i++)
-                    _positions[i] = _index;
-            }
+            using Base<MemoryView<T>,T>::data;
+            using Base<MemoryView<T>,T>::setRange;
+            using Base<MemoryView<T>,T>::slice;
+            using Base<MemoryView<T>,T>::getRange;
+            using Base<MemoryView<T>,T>::get;
+            using Base<MemoryView<T>,T>::getDimensions;
+            using Base<MemoryView<T>,T>::copyFrom;
+            using Base<MemoryView<T>,T>::getIndex;
+            using Base<MemoryView<T>,T>::loadIndex;
             
         #ifndef NO_VECTORIALIZATION
-            MV_INLINE void loadVector()
-            {
-                if(IS_DOUBLE( T ))     _x_vec_d = (MM_VECT(d)*) (_data + _index);
-                else if(IS_FLOAT( T )) _x_vec_s = (MM_VECT( )*) (_data + _index);
-                else                   _x_vec_i = (MM_VECT(i)*) (_data + _index);
-            }
+            using Base<MemoryView<T>,T>::loadVector;
         #endif
             
-            MV_INLINE bool isSliced()
-            { return _range.isSliced(); }
-            
-            MV_INLINE bool isSubBlock()
-            {
-                for(size_dim i = 1; i < _size; i++)
-                    if(_range.shape(i) != _dimensions[i]) return false;
-                return true;
-            }
-            
-            MV_INLINE size_dim toAlignment()
-			{ return (block - (_index % block)) % block; }
-            
-            MV_INLINE bool isAligned()
-            { return _data != NULL && ((uintptr_t) &(_data[_index])) % BLOCK == 0; }
-            
-            MV_INLINE bool isAlignable()
-            { return _data != NULL && (BLOCK - (((uintptr_t) &(_data[0])) % BLOCK)) % sizeof( T ) == 0; }
+            using Base<MemoryView<T>,T>::isSliced;
+            using Base<MemoryView<T>,T>::isSubBlock;
+            using Base<MemoryView<T>,T>::toAlignment;
+            using Base<MemoryView<T>,T>::isAligned;
+            using Base<MemoryView<T>,T>::isAlignable;
+            //using Base<MemoryView<T>,T>::update;
+            //using Base<MemoryView<T>,T>::template update<int offset>;
+            //using Base<MemoryView<T>,T>::template<int,int> update<int,int>;
             
             template<int offset>
             MV_INLINE void update( const int dim )
-            {
-                switch( dim ) {
-                    case( 1 ): _index += offset; break;
-                    case( 2 ): _index += _sizeDimensions[_size-2]; break;
-                    default  : _index = _positions[_size-dim] += _sizeDimensions[_size-dim]; break;
-                }
-            }
-            
-            template<int dim>
-            MV_INLINE void update_dim( const int offset )
             {
                 switch( dim ) {
                     case( 1 ): _index += offset; break;
@@ -247,6 +124,11 @@ namespace algebra
                     default  : _index = _positions[_size-dim] += _sizeDimensions[_size-dim]; break;
                 }
             }
+            
+            using Base<MemoryView<T>,T>::update_dim;
+            
+            using Base<MemoryView<T>,T>::operator[];
+            using Base<MemoryView<T>,T>::print_out;
             
             // ========================== //
             
@@ -429,121 +311,7 @@ namespace algebra
                 return this;
             }
             
-            inline MemoryView<T>* operator[]( const char* idx )
-            {
-                string index = string( idx );
-                // Remove the useless characters (whitespaces and tabs) from the beginning and from the end.
-                index.erase( std::remove( index.begin(), index.end(), '\t' ), index.end() );
-                index.erase( std::remove( index.begin(), index.end(), ' ' ), index.end() );
-                
-                std::vector<size_dim> boundaries( _size * 2 );
-                
-                size_t length = index.length(), dim = 0, curr = 0, next = 0;
-                int16_t pos;
-                
-                // Retrieve the indices used for the slicing.
-                do {
-                    next = index.find( ',', curr );
-                    if(next == string::npos) // Not found => last dimension.
-                        next = length;
-                    
-                    size_t colon = index.find( ':', curr );
-                    if(colon == string::npos || colon > next) { // Not found.
-                        // Unary position.
-                        pos = stoi( index.substr( curr, (colon-curr) ) );
-                        if(pos >= _dimensions[dim]){ fprintf( stderr, "Out of bounds on buffer access (dimension %ld).\n", (dim+1) ); throw; };
-                        
-                        boundaries[2*dim] = (pos < 0) ? _range._boundaries[dim].second + pos : _range._boundaries[dim].first + pos;
-                        boundaries[2*dim+1] = boundaries[2*dim] + 1;
-                    }
-                    else {
-                        // All current dimension.
-                        if(colon == curr) {
-                            boundaries[2*dim]   = _range._boundaries[dim].first;
-                            boundaries[2*dim+1] = _range._boundaries[dim].second;
-                        }
-                        
-                        // Starting position.
-                        if(colon > curr) {
-                            pos = stoi( index.substr( curr, (colon-curr) ) );
-                            if(pos < 0) boundaries[2*dim] = _range._boundaries[dim].second + pos;
-                            else        boundaries[2*dim] = _range._boundaries[dim].first + pos;
-                        }
-                        
-                        // Ending position.
-                        if(colon == next-1)
-                            boundaries[2*dim+1] = _range._boundaries[dim].second;
-                        else {
-                            pos = stoi( index.substr( colon+1, (next-colon-1) ) );
-                            if(pos < 0) boundaries[2*dim+1] = _MAX( _range._boundaries[dim].first, _range._boundaries[dim].second + pos );
-                            else        boundaries[2*dim+1] = _range._boundaries[dim].first + pos;
-                        }
-                    }
-                    
-                    dim++;
-                    curr = next + 1;
-                } while(curr < length);
-                
-                for(size_dim i = dim; i < _size; i++) {
-                    boundaries[2*i]   = _range._boundaries[i].first;
-                    boundaries[2*i+1] = _range._boundaries[i].second;
-                }
-                
-                return slice( boundaries );
-            }
-            
-            void printSize()
-            {
-                printf( "RANGES = [" );
-                for(size_dim i = 0; i < _size-1; i++)
-                    printf( "(%ld, %ld), ", _range._boundaries[i].first, _range._boundaries[i].second );
-                printf( "(%ld, %ld)", _range._boundaries[_size-1].first, _range._boundaries[_size-1].second );
-                printf( "]\n");
-            }
-            
-            void print_out()
-            {
-                printSize();
-                printf( "[" );
-                printDimension( 0, std::vector<size_dim>( _size ) );
-                printf( "]\n" );
-            }
-            
-        private:
-            inline void printDimension( const size_m& dim, std::vector<size_dim> indices )
-            {
-                const size_dim from = _range._boundaries[dim].first;
-                const size_dim to   = _range._boundaries[dim].second;
-                
-                indices[dim] = 0;
-                
-                if(dim == _size-1) {
-                    for(size_dim i = from; i < to; i++) {
-                        indices[dim] = i;
-                        T value = get( indices );
-                        if(value < 0) printf( (i < to-1) ? "%.8lf " : "%.8lf", value );
-                        else printf( (i < to-1) ? " %.8lf " : " %.8lf", value );
-                    }
-                }
-                else {
-                    for(size_dim i = from; i < to; i++) {
-                        if(i > from) {
-                            for(size_dim i = 0; i <= dim; i++)
-                                printf( " " );
-                        }
-                        printf( "[" );
-                        
-                        indices[dim] = i;
-                        printDimension( dim+1, indices );
-                        
-                        printf( "]" );
-                        if(i < to-1) {
-                            for(size_dim i = 0; i < _size - dim - 1; i++)
-                                printf( "\n" );
-                        }
-                    }
-                }
-            }
+            // ========================== //
         
         public:
             ~MemoryView()

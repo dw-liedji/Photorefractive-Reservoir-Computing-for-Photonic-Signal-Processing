@@ -31,7 +31,7 @@ using namespace std;
 
 namespace algebra
 {
-    template<typename T>
+    template<typename Derived, typename T>
     class Base
     {
         public:
@@ -42,10 +42,10 @@ namespace algebra
             MM_VECT()*  _x_vec_s;
             MM_VECT(d)* _x_vec_d;
         #endif
-            
+        
+        protected:
             Range _range;
             
-            //Function<Base,T>* _fun = NULL;
             size_m   _dimensions[MAX_DIMENSIONS];
             size_dim _sizeDimensions[MAX_DIMENSIONS];
             
@@ -54,11 +54,10 @@ namespace algebra
             
             size_dim _size;
             
-            //size_dim block = BLOCK / sizeof( T );
         #ifdef NO_VECTORIALIZATION
-            bool VECTORIALIZATION = false;
+            const bool VECTORIALIZATION = false;
         #else
-            bool VECTORIALIZATION = true;
+            const bool VECTORIALIZATION = true;
         #endif
         
         
@@ -84,19 +83,8 @@ namespace algebra
                 _data = data;
             }
             
-            Base( const Base<T>* other )
-            {
-                _size = other->_size;
-                
-                memcpy( _dimensions, other->_dimensions, sizeof( size_m ) * MAX_DIMENSIONS );
-                memcpy( _sizeDimensions, other->_sizeDimensions, sizeof( size_dim ) * MAX_DIMENSIONS );
-                
-                memcpy( _indices, other->_indices, sizeof( size_m ) * MAX_DIMENSIONS );
-                memcpy( _positions, other->_positions, sizeof( size_dim ) * MAX_DIMENSIONS );
-                
-                _data = other->_data;
-                _range = other->_range;
-            }
+            Base( const Derived* other )
+            { copyFrom( other ); }
         
         private:
             template<class Container>
@@ -104,7 +92,7 @@ namespace algebra
             {
                 _size = container.size();
                 if(_size > MAX_DIMENSIONS) {
-                    fprintf( stderr, "Sequence too large; cannot be greater than %d.\n", MAX_DIMENSIONS );
+                    fprintf( stderr, "Sequence too large; cannot be greater than %d\n", MAX_DIMENSIONS );
                     throw;
                 }
                 
@@ -124,7 +112,47 @@ namespace algebra
                 _range.setRange<false>( boundaries );
             }
             
-            /*MV_INLINE void copyFrom( Base<T>* other )
+            
+            
+            // ======== UTILITY METHODS ======== //
+            
+        public:
+            T* data() { return _data; }
+            
+            template<bool sliced>
+            inline void setRange( const std::vector<size_dim> boundaries )
+            { _range.setRange<sliced>( boundaries ); }
+            
+            Derived* slice( const std::vector<size_dim> boundaries )
+            {
+                Derived* _tmp = new Derived( _data, _dimensions, _size );
+                _tmp->setRange<true>( boundaries );
+                
+                return _tmp;
+            }
+            
+            inline Range getRange()
+            { return _range; }
+
+            inline T get( const std::vector<size_dim> positions )
+            {
+                size_dim i = 0, _pos = 0;
+                for(size_dim pos : positions)
+                    _pos += (_sizeDimensions[i++] * pos);
+                
+                return _data[_pos];
+            }
+            
+            inline std::vector<size_dim> getDimensions()
+            {
+                std::vector<size_dim> dimensions( _size );
+                for(size_dim i = 0; i < _size; i++)
+                    dimensions[i] = _range.shape( i );
+                
+                return dimensions;
+            }
+            
+            MV_INLINE void copyFrom( const Derived* other )
             {
                 _size = other->_size;
                 
@@ -135,53 +163,7 @@ namespace algebra
                 memcpy( _positions, other->_positions, sizeof( size_dim ) * MAX_DIMENSIONS );
                 
                 _data = other->_data;
-                _range = other->_range;
-            }*/
-            
-            
-            
-            // ======== UTILITY METHODS ======== //
-            
-        /*public:
-            T* data() { return _data; }
-            
-            template<bool sliced>
-            void setRange( const std::vector<size_dim> boundaries )
-            { _range.setRange<sliced>( boundaries ); }
-            
-            Base<T>* slice( const std::vector<size_dim> boundaries )
-            {
-                Base<T>* _tmp = new Base<T>( _data, _dimensions, _size );
-                _tmp->setRange<true>( boundaries );
-                
-                return _tmp;
-            }
-            
-            // Used only by Cython.
-            Base<T>* slice( const size_m fCu, const size_m tCu, const size_m fM, const size_m tM, const size_m fR, const size_m tR, const size_m fCo, const size_m tCo )
-            {
-                Base<T>* _tmp = new Base<T>( _data, _dimensions, _size );
-                _tmp->setRange<true>( { fCu, tCu, fM, tM, fR, tR, fCo, tCo } );
-                
-                return _tmp;
-            }
-            
-            T get( const std::vector<size_dim> positions )
-            {
-                size_dim i = 0, _pos = 0;
-                for(size_dim pos : positions)
-                    _pos += (_sizeDimensions[i++] * pos);
-                
-                return _data[_pos];
-            }
-            
-            std::vector<size_dim> getDimensions()
-            {
-                std::vector<size_dim> dimensions( _size );
-                for(size_dim i = 0; i < _size; i++)
-                    dimensions[i] = _range.shape( i );
-                
-                return dimensions;
+                _range.copyFrom( other->_range );
             }
             
             MV_INLINE size_dim getIndex()
@@ -198,11 +180,11 @@ namespace algebra
             }
             
         #ifndef NO_VECTORIALIZATION
-            INLINE void loadVector()
+            MV_INLINE void loadVector()
             {
-                if(IS_DOUBLE( T )) _x_vec_d = (MM_VECT(d)*) (_data + _index);
-                else if(IS_FLOAT( T )) _x_vec_s = (MM_VECT()*) (_data + _index);
-                else _x_vec_i = (MM_VECT(i)*) (_data + _index);
+                if(IS_DOUBLE( T ))     _x_vec_d = (MM_VECT(d)*) (_data + _index);
+                else if(IS_FLOAT( T )) _x_vec_s = (MM_VECT( )*) (_data + _index);
+                else                   _x_vec_i = (MM_VECT(i)*) (_data + _index);
             }
         #endif
             
@@ -225,8 +207,8 @@ namespace algebra
             MV_INLINE bool isAlignable()
             { return _data != NULL && (BLOCK - (((uintptr_t) &(_data[0])) % BLOCK)) % sizeof( T ) == 0; }
             
-            template<int offset>
-            MV_INLINE void update( const int dim )
+            template<int dim>
+            MV_INLINE void update_dim( const int offset )
             {
                 switch( dim ) {
                     case( 1 ): _index += offset; break;
@@ -234,25 +216,6 @@ namespace algebra
                     default  : _index = _positions[_size-dim] += _sizeDimensions[_size-dim]; break;
                 }
             }
-            
-            template<int dim, int offset>
-            MV_INLINE void update()
-            {
-                switch( dim ) {
-                    case( 1 ): _index += offset; break;
-                    case( 2 ): _index += _sizeDimensions[_size-2]; break;
-                    default  : _index = _positions[_size-dim] += _sizeDimensions[_size-dim]; break;
-                }
-            }
-            
-            MV_INLINE void update( const int dim, const int offset )
-            {
-                switch( dim ) {
-                    case( 1 ): _index += offset; break;
-                    case( 2 ): _index += _sizeDimensions[_size-2]; break;
-                    default  : _index = _positions[_size-dim] += _sizeDimensions[_size-dim]; break;
-                }
-            }*/
             
             // ========================== //
             
@@ -287,7 +250,9 @@ namespace algebra
             
             virtual Base<T>* operator[]( const char* idx );
             
-            inline Base<T>* operator[]( const char* idx )
+            // ========================== //*/
+            
+            inline Derived* operator[]( const char* idx )
             {
                 string index = string( idx );
                 // Remove the useless characters (whitespaces and tabs) from the beginning and from the end.
@@ -309,7 +274,7 @@ namespace algebra
                     if(colon == string::npos || colon > next) { // Not found.
                         // Unary position.
                         pos = stoi( index.substr( curr, (colon-curr) ) );
-                        if(pos >= _dimensions[dim]){ printf( "Out of bounds on buffer access (dimension %d).\n", (dim+1) ); throw; };
+                        if(pos >= _dimensions[dim]){ fprintf( stderr, "Out of bounds on buffer access (dimension %ld).\n", (dim+1) ); throw; };
                         
                         boundaries[2*dim] = (pos < 0) ? _range._boundaries[dim].second + pos : _range._boundaries[dim].first + pos;
                         boundaries[2*dim+1] = boundaries[2*dim] + 1;
@@ -350,15 +315,6 @@ namespace algebra
                 return slice( boundaries );
             }
             
-            void printSize()
-            {
-                printf( "RANGES = [" );
-                for(size_dim i = 0; i < _size-1; i++)
-                    printf( "(%ld, %ld), ", _range._boundaries[i].first, _range._boundaries[i].second );
-                printf( "(%ld, %ld)", _range._boundaries[_size-1].first, _range._boundaries[_size-1].second );
-                printf( "]\n");
-            }
-            
             void print_out()
             {
                 printSize();
@@ -369,6 +325,15 @@ namespace algebra
             }
             
         private:
+            inline void printSize()
+            {
+                printf( "RANGES = [" );
+                for(size_dim i = 0; i < _size-1; i++)
+                    printf( "(%ld, %ld), ", _range._boundaries[i].first, _range._boundaries[i].second );
+                printf( "(%ld, %ld)", _range._boundaries[_size-1].first, _range._boundaries[_size-1].second );
+                printf( "]\n");
+            }
+            
             inline void printDimension( const size_m& dim, std::vector<size_dim> indices )
             {
                 const size_dim from = _range._boundaries[dim].first;
@@ -401,9 +366,6 @@ namespace algebra
                     }
                 }
             }
-        
-        public:
-            virtual ~Base(){ if(_data != NULL) free( _data ); }*/
     };
 }
 
